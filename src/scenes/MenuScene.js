@@ -90,6 +90,7 @@ export default class MenuScene extends Phaser.Scene {
     this.input.keyboard.once('keydown', () => Sfx.ensure());
     this.input.keyboard.on('keydown-Z', () => this.startGame());
     this.input.keyboard.on('keydown-ENTER', () => this.startGame());
+    this.input.on('pointerdown', () => this.startGame()); // tap to start (mobile)
   }
 
   loadScores() {
@@ -103,7 +104,9 @@ export default class MenuScene extends Phaser.Scene {
   startGame() {
     Sfx.ensure();
     Sfx.play('select');
-    this.scene.start('Game', { zoneIndex: 0, score: 0, lives: 3, fresh: true });
+    this.scene.start('StageIntro', {
+      zoneIndex: 0, score: 0, lives: 3, continues: 0, fresh: true,
+    });
   }
 
   update(_, delta) {

@@ -607,132 +607,6 @@ function genMongkok(scene) {
   addTex(scene, 'mongkok_ground', c);
 }
 
-function genRooftop(scene) {
-  // far: tall lit skyline + moon
-  let c = makeCanvas(480, 540);
-  let ctx = c.getContext('2d');
-  skyGradient(ctx, 480, 540, [[0, '#060819'], [0.6, '#141b3d'], [1, '#27214f']]);
-  stars(ctx, 480, 300, 90);
-  ctx.fillStyle = '#fdf6d8';
-  ctx.beginPath();
-  ctx.arc(110, 70, 26, 0, PI2);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(6,8,25,0.55)';
-  ctx.beginPath();
-  ctx.arc(100, 62, 24, 0, PI2);
-  ctx.fill();
-  ctx.fillStyle = '#0b0e24';
-  [[0, 160, 60, 380], [55, 110, 70, 430], [120, 200, 55, 340], [170, 90, 85, 450],
-   [250, 170, 60, 370], [305, 130, 75, 410], [375, 190, 55, 350], [425, 120, 55, 420]]
-    .forEach(([x, y, w, h]) => {
-      ctx.fillRect(x, y, w, h);
-      windows(ctx, x, y, w, h, 'rgba(170,220,255,0.45)', 0.4);
-    });
-  // red aviation beacons
-  ctx.fillStyle = '#ff5252';
-  [62, 178, 312, 430].forEach((x, i) => ctx.fillRect(x + 20, [108, 88, 128, 118][i], 3, 3));
-  addTex(scene, 'rooftop_far', c);
-
-  // mid: neighbouring rooftops + bamboo scaffolding
-  c = makeCanvas(768, 540);
-  ctx = c.getContext('2d');
-  [[0, 300, 200, 174], [230, 330, 180, 144], [450, 290, 190, 184], [660, 340, 108, 134]]
-    .forEach(([x, y, w, h]) => {
-      ctx.fillStyle = '#171428';
-      ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = '#211c38';
-      ctx.fillRect(x, y, w, 10);
-      windows(ctx, x, y + 14, w, h - 14, 'rgba(255,210,130,0.3)', 0.22);
-    });
-  // bamboo scaffolding lattice
-  ctx.strokeStyle = '#8d6e4a';
-  ctx.lineWidth = 3;
-  const bamboo = (x0, y0, w, h) => {
-    for (let x = x0; x <= x0 + w; x += 26) {
-      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y0 + h); ctx.stroke();
-    }
-    for (let y = y0; y <= y0 + h; y += 30) {
-      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke();
-    }
-    ctx.beginPath(); ctx.moveTo(x0, y0 + h); ctx.lineTo(x0 + w, y0); ctx.stroke();
-  };
-  bamboo(180, 180, 130, 150);
-  bamboo(560, 160, 120, 170);
-  // antennas
-  ctx.strokeStyle = '#39344f';
-  ctx.lineWidth = 2;
-  [80, 380, 700].forEach((x) => {
-    ctx.beginPath(); ctx.moveTo(x, 300); ctx.lineTo(x, 230); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x - 10, 245); ctx.lineTo(x + 10, 245); ctx.stroke();
-  });
-  horizNeon(ctx, 350, 120, '夜冷', '#b04dff', 22);
-  addTex(scene, 'rooftop_mid', c);
-
-  // near: water towers, AC units, railing
-  c = makeCanvas(1024, 540);
-  ctx = c.getContext('2d');
-  const waterTower = (x) => {
-    ctx.fillStyle = '#3a3148';
-    ctx.fillRect(x + 8, 300, 64, 70);       // tank
-    ctx.fillStyle = '#2c2538';
-    ctx.beginPath();
-    ctx.moveTo(x, 300); ctx.lineTo(x + 40, 274); ctx.lineTo(x + 80, 300);
-    ctx.closePath(); ctx.fill();            // conical lid
-    ctx.strokeStyle = '#241e30';
-    ctx.lineWidth = 4;
-    [[x + 14, x + 4], [x + 66, x + 76]].forEach(([tx, bx]) => {
-      ctx.beginPath(); ctx.moveTo(tx, 370); ctx.lineTo(bx, 470); ctx.stroke();
-    });
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth = 2;
-    for (let y = 312; y < 366; y += 12) {
-      ctx.beginPath(); ctx.moveTo(x + 8, y); ctx.lineTo(x + 72, y); ctx.stroke();
-    }
-  };
-  waterTower(120);
-  waterTower(640);
-  const acUnit = (x) => {
-    ctx.fillStyle = '#494157';
-    ctx.fillRect(x, 424, 64, 46);
-    ctx.fillStyle = '#352e42';
-    ctx.beginPath();
-    ctx.arc(x + 32, 447, 16, 0, PI2);
-    ctx.fill();
-    ctx.strokeStyle = '#241e30';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x + 32, 447, 16, 0, PI2);
-    ctx.stroke();
-  };
-  acUnit(330);
-  acUnit(450);
-  acUnit(880);
-  // safety railing along the roof edge
-  ctx.strokeStyle = '#56506b';
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(0, 430); ctx.lineTo(1024, 430); ctx.stroke();
-  for (let x = 10; x < 1024; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x, 430); ctx.lineTo(x, 472); ctx.stroke();
-  }
-  addTex(scene, 'rooftop_near', c);
-
-  // ground: concrete slabs
-  c = makeCanvas(256, 74);
-  ctx = c.getContext('2d');
-  ctx.fillStyle = '#2a2733';
-  ctx.fillRect(0, 0, 256, 74);
-  ctx.fillStyle = '#332f3e';
-  ctx.fillRect(0, 0, 256, 5);
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-  ctx.lineWidth = 2;
-  for (let x = 0; x < 256; x += 85) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - 14, 74); ctx.stroke();
-  }
-  ctx.fillStyle = 'rgba(255,255,255,0.04)';
-  for (let i = 0; i < 30; i++) ctx.fillRect((i * 47) % 256, 8 + ((i * 31) % 60), 2, 2);
-  addTex(scene, 'rooftop_ground', c);
-}
-
 function genAlley(scene) {
   // far: oppressive dark walls with a red glow from below
   let c = makeCanvas(480, 540);
@@ -874,13 +748,479 @@ function genAlley(scene) {
   addTex(scene, 'alley_ground', c);
 }
 
+function genHarbour(scene) {
+  // far: dusk sky, harbour water, lit skyline across the bay
+  let c = makeCanvas(480, 540);
+  let ctx = c.getContext('2d');
+  skyGradient(ctx, 480, 540, [[0, '#0a1230'], [0.45, '#232a5e'], [0.62, '#6e3a63'], [0.72, '#1a2050'], [1, '#0c1538']]);
+  stars(ctx, 480, 200, 50);
+  // skyline across the water
+  ctx.fillStyle = '#0d1330';
+  [[0, 230, 50, 110], [45, 200, 40, 140], [90, 250, 60, 90], [145, 180, 35, 160],
+   [180, 220, 55, 120], [240, 160, 45, 180], [285, 240, 50, 100], [330, 200, 60, 140],
+   [385, 230, 45, 110], [430, 210, 50, 130]]
+    .forEach(([x, y, w, h]) => {
+      ctx.fillRect(x, y, w, h);
+      windows(ctx, x, y, w, h, 'rgba(255,220,130,0.55)', 0.45);
+    });
+  // IFC-style tower
+  ctx.fillStyle = '#101842';
+  ctx.fillRect(150, 110, 30, 230);
+  windows(ctx, 150, 110, 30, 230, 'rgba(170,220,255,0.5)', 0.5);
+  // water with city reflections
+  const water = ctx.createLinearGradient(0, 340, 0, 540);
+  water.addColorStop(0, '#101b42');
+  water.addColorStop(1, '#060a20');
+  ctx.fillStyle = water;
+  ctx.fillRect(0, 340, 480, 200);
+  reflections(ctx, 480, 342, 120, ['rgba(255,220,130,1)', 'rgba(77,217,255,1)', 'rgba(255,77,136,1)']);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let y = 350; y < 540; y += 14) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(480, y); ctx.stroke();
+  }
+  addTex(scene, 'harbour_far', c);
+
+  // mid: star ferry silhouette, junk boat, pier structures
+  c = makeCanvas(768, 540);
+  ctx = c.getContext('2d');
+  // star ferry
+  ctx.fillStyle = '#141a38';
+  ctx.fillRect(80, 330, 180, 36);            // hull
+  ctx.fillRect(100, 306, 140, 26);           // upper deck
+  ctx.fillStyle = '#0d1228';
+  ctx.fillRect(95, 300, 150, 8);             // roof
+  windows(ctx, 100, 308, 140, 24, 'rgba(255,236,160,0.7)', 0.7);
+  ctx.fillStyle = '#0d1228';
+  ctx.fillRect(160, 282, 8, 20);             // funnel
+  // junk boat with fanned sails
+  ctx.fillStyle = '#160f1e';
+  ctx.beginPath();
+  ctx.moveTo(480, 360); ctx.lineTo(640, 360); ctx.lineTo(610, 330); ctx.lineTo(505, 330);
+  ctx.closePath(); ctx.fill();
+  const sail = (x, h) => {
+    ctx.fillStyle = '#7a2030';
+    ctx.beginPath();
+    ctx.moveTo(x, 330);
+    ctx.quadraticCurveTo(x + 34, 330 - h * 0.65, x + 6, 330 - h);
+    ctx.lineTo(x, 330 - h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#4a1018';
+    ctx.lineWidth = 1.5;
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(x, 330 - (h / 4) * i);
+      ctx.quadraticCurveTo(x + 22, 330 - (h / 4) * i - 8, x + 30 - i * 4, 330 - (h / 4) * i - 14);
+      ctx.stroke();
+    }
+  };
+  sail(520, 80);
+  sail(565, 100);
+  ctx.fillStyle = '#0e0a14';
+  ctx.fillRect(563, 226, 4, 134);            // mast
+  // pier roof structures
+  ctx.fillStyle = '#101226';
+  ctx.fillRect(660, 280, 108, 194);
+  ctx.fillStyle = '#181c38';
+  ctx.beginPath();
+  ctx.moveTo(650, 280); ctx.lineTo(714, 240); ctx.lineTo(768, 280);
+  ctx.closePath(); ctx.fill();
+  windows(ctx, 668, 300, 92, 160, 'rgba(255,210,130,0.3)', 0.25);
+  horizNeon(ctx, 350, 140, '天星碼頭', '#4dd9ff', 24);
+  addTex(scene, 'harbour_mid', c);
+
+  // near: pier railing, bollards, ropes, crates, life buoys
+  c = makeCanvas(1024, 540);
+  ctx = c.getContext('2d');
+  // railing
+  ctx.strokeStyle = '#3a4668';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0, 386); ctx.lineTo(1024, 386); ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, 412); ctx.lineTo(1024, 412); ctx.stroke();
+  for (let x = 16; x < 1024; x += 56) {
+    ctx.beginPath(); ctx.moveTo(x, 386); ctx.lineTo(x, 468); ctx.stroke();
+  }
+  // mooring bollards + rope
+  const bollard = (x) => {
+    ctx.fillStyle = '#2c3450';
+    ctx.fillRect(x - 10, 430, 20, 40);
+    ctx.fillStyle = '#3a4668';
+    ctx.beginPath();
+    ctx.ellipse(x, 430, 12, 6, 0, 0, PI2);
+    ctx.fill();
+    ctx.strokeStyle = '#6b5536';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, 436);
+    ctx.quadraticCurveTo(x + 40, 470, x + 110, 446);
+    ctx.stroke();
+  };
+  bollard(180);
+  bollard(620);
+  bollard(940);
+  // crates
+  [[330, 420], [372, 420], [350, 380]].forEach(([x, y]) => {
+    ctx.fillStyle = '#4c5a3a';
+    ctx.fillRect(x, y, 40, 40);
+    ctx.strokeStyle = '#33402a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 3, y + 3, 34, 34);
+  });
+  // life buoy on railing
+  const buoy = (x) => {
+    ctx.strokeStyle = '#e64a19';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(x, 400, 16, 0, PI2);
+    ctx.stroke();
+    ctx.strokeStyle = '#f5f5f5';
+    ctx.lineWidth = 7;
+    [0.2, 1.2, 2.2, 3.2].forEach((a) => {
+      ctx.beginPath();
+      ctx.arc(x, 400, 16, a * Math.PI / 2 + 0.5, a * Math.PI / 2 + 0.9);
+      ctx.stroke();
+    });
+  };
+  buoy(480);
+  buoy(800);
+  addTex(scene, 'harbour_near', c);
+
+  // ground: pier planks
+  c = makeCanvas(256, 74);
+  ctx = c.getContext('2d');
+  ctx.fillStyle = '#2c2218';
+  ctx.fillRect(0, 0, 256, 74);
+  ctx.fillStyle = '#382c1e';
+  ctx.fillRect(0, 0, 256, 5);
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+  ctx.lineWidth = 2;
+  for (let x = 0; x < 256; x += 52) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - 8, 74); ctx.stroke();
+  }
+  for (let y = 18; y < 74; y += 22) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  for (let i = 0; i < 24; i++) ctx.fillRect((i * 53) % 256, 8 + ((i * 37) % 60), 8, 1.5);
+  addTex(scene, 'harbour_ground', c);
+}
+
+function genAirport(scene) {
+  // far: terminal glass wall at night, runway + tails beyond
+  let c = makeCanvas(480, 540);
+  let ctx = c.getContext('2d');
+  skyGradient(ctx, 480, 540, [[0, '#0c1024'], [0.65, '#1a2240'], [1, '#23304f']]);
+  stars(ctx, 480, 180, 35);
+  // distant runway
+  ctx.fillStyle = '#11182c';
+  ctx.fillRect(0, 330, 480, 210);
+  ctx.fillStyle = '#ffe14d';
+  for (let x = 0; x < 480; x += 36) ctx.fillRect(x, 372, 16, 3); // runway lights
+  ctx.fillStyle = '#4dd9ff';
+  for (let x = 18; x < 480; x += 36) ctx.fillRect(x, 420, 10, 3);
+  // parked plane silhouette
+  ctx.fillStyle = '#1d2742';
+  ctx.beginPath();
+  ctx.ellipse(240, 320, 130, 16, 0, 0, PI2);
+  ctx.fill();
+  ctx.beginPath(); // tail fin
+  ctx.moveTo(348, 322); ctx.lineTo(380, 252); ctx.lineTo(396, 252); ctx.lineTo(368, 322);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#d32f2f';
+  ctx.fillRect(376, 252, 16, 12);
+  windows(ctx, 130, 310, 200, 12, 'rgba(255,236,160,0.6)', 0.6);
+  // control tower
+  ctx.fillStyle = '#16203a';
+  ctx.fillRect(60, 180, 22, 150);
+  ctx.fillStyle = '#22304f';
+  ctx.fillRect(48, 156, 46, 30);
+  windows(ctx, 50, 160, 42, 22, 'rgba(170,220,255,0.7)', 0.8);
+  ctx.fillStyle = '#ff5252';
+  ctx.fillRect(68, 146, 4, 4); // beacon
+  addTex(scene, 'airport_far', c);
+
+  // mid: terminal interior — glass curtain wall, roof trusses, departure board
+  c = makeCanvas(768, 540);
+  ctx = c.getContext('2d');
+  // glass wall panels
+  for (let x = 0; x < 768; x += 96) {
+    const g = ctx.createLinearGradient(0, 60, 0, 470);
+    g.addColorStop(0, 'rgba(40,60,100,0.35)');
+    g.addColorStop(1, 'rgba(20,30,55,0.2)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x + 4, 60, 88, 410);
+    ctx.strokeStyle = '#2c3a58';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x + 4, 60, 88, 410);
+  }
+  // swooping roof trusses (Chek Lap Kok signature)
+  ctx.strokeStyle = '#3c4c70';
+  ctx.lineWidth = 5;
+  for (let x = -40; x < 808; x += 192) {
+    ctx.beginPath();
+    ctx.moveTo(x, 110);
+    ctx.quadraticCurveTo(x + 96, 30, x + 192, 110);
+    ctx.stroke();
+  }
+  ctx.lineWidth = 2;
+  for (let x = 0; x < 768; x += 48) {
+    ctx.beginPath(); ctx.moveTo(x, 64); ctx.lineTo(x + 24, 96); ctx.stroke();
+  }
+  // departure board
+  ctx.fillStyle = '#0a0c14';
+  ctx.fillRect(280, 150, 210, 90);
+  ctx.strokeStyle = '#3c4c70';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(280, 150, 210, 90);
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffe14d';
+  ctx.fillText('DEPARTURES 出發', 292, 168);
+  ctx.fillStyle = '#6dff6d';
+  ['HKG→TYO  20:45  BOARDING', 'HKG→LDN  21:10  ON TIME', 'HKG→NYC  21:35  DELAYED'].forEach((s, i) => {
+    ctx.fillStyle = i === 2 ? '#ff5252' : '#6dff6d';
+    ctx.fillText(s, 292, 188 + i * 16);
+  });
+  horizNeon(ctx, 620, 180, '出境 DEPARTURES', '#4dd9ff', 16);
+  addTex(scene, 'airport_mid', c);
+
+  // near: check-in counters, luggage trolleys, stanchions
+  c = makeCanvas(1024, 540);
+  ctx = c.getContext('2d');
+  // check-in counter island
+  const counter = (x) => {
+    ctx.fillStyle = '#2a3450';
+    ctx.fillRect(x, 380, 150, 90);
+    ctx.fillStyle = '#364264';
+    ctx.fillRect(x, 380, 150, 10);
+    ctx.fillStyle = '#1c2438';
+    ctx.fillRect(x + 8, 398, 134, 30);
+    // counter sign
+    ctx.fillStyle = '#0a0c14';
+    ctx.fillRect(x + 45, 300, 60, 28);
+    ctx.fillStyle = '#ffe14d';
+    ctx.font = `bold 16px ${CJK_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String.fromCharCode(65 + ((x / 100) | 0) % 6), x + 75, 314);
+    ctx.strokeStyle = '#3c4c70';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x + 75, 328); ctx.lineTo(x + 75, 380); ctx.stroke();
+  };
+  counter(100);
+  counter(540);
+  counter(860);
+  // luggage trolley
+  const trolley = (x) => {
+    ctx.strokeStyle = '#7c8aa8';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, 420, 52, 30);
+    ctx.beginPath(); ctx.moveTo(x + 52, 420); ctx.lineTo(x + 60, 396); ctx.stroke();
+    ctx.fillStyle = '#8a4f2b';
+    ctx.fillRect(x + 4, 402, 30, 18);   // suitcase
+    ctx.fillStyle = '#37474f';
+    ctx.fillRect(x + 14, 388, 26, 14);  // suitcase 2
+    ctx.fillStyle = '#222';
+    [[x + 8, 456], [x + 44, 456]].forEach(([wx, wy]) => {
+      ctx.beginPath(); ctx.arc(wx, wy, 6, 0, PI2); ctx.fill();
+    });
+  };
+  trolley(330);
+  trolley(740);
+  // queue stanchions with belt
+  const stanchion = (x) => {
+    ctx.fillStyle = '#8a93a8';
+    ctx.fillRect(x - 3, 408, 6, 62);
+    ctx.beginPath(); ctx.arc(x, 408, 5, 0, PI2); ctx.fill();
+  };
+  stanchion(440);
+  stanchion(500);
+  ctx.strokeStyle = '#d32f2f';
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(440, 418); ctx.quadraticCurveTo(470, 428, 500, 418); ctx.stroke();
+  addTex(scene, 'airport_near', c);
+
+  // ground: polished terminal tile with soft reflections
+  c = makeCanvas(256, 74);
+  ctx = c.getContext('2d');
+  ctx.fillStyle = '#262e44';
+  ctx.fillRect(0, 0, 256, 74);
+  ctx.fillStyle = '#323c58';
+  ctx.fillRect(0, 0, 256, 5);
+  reflections(ctx, 256, 5, 56, ['rgba(180,210,255,1)', 'rgba(255,236,160,1)']);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1.5;
+  for (let x = 0; x < 256; x += 64) {
+    ctx.beginPath(); ctx.moveTo(x, 5); ctx.lineTo(x - 10, 74); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(256, 38); ctx.stroke();
+  addTex(scene, 'airport_ground', c);
+}
+
+/* ------------------------------------------------------------------ */
+/* Weapons, projectiles, cutscene props                                */
+/* ------------------------------------------------------------------ */
+
+function generateWeapons(scene) {
+  // 西瓜刀 chopper
+  let c = makeCanvas(26, 26);
+  let ctx = c.getContext('2d');
+  ctx.fillStyle = '#cfd8dc';
+  ctx.beginPath();
+  ctx.moveTo(4, 18); ctx.lineTo(18, 4); ctx.lineTo(22, 8); ctx.lineTo(20, 12); ctx.lineTo(8, 22);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(2, 18, 7, 6);
+  addTex(scene, 'wpn_chopper', c);
+
+  // 玻璃樽 bottle
+  c = makeCanvas(26, 26);
+  ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(105,190,120,0.85)';
+  ctx.fillRect(10, 10, 7, 14);
+  ctx.fillRect(12, 3, 3, 8);
+  ctx.fillStyle = 'rgba(220,255,230,0.5)';
+  ctx.fillRect(11, 12, 2, 10);
+  addTex(scene, 'wpn_bottle', c);
+
+  // 鐵枝 rod
+  c = makeCanvas(26, 26);
+  ctx = c.getContext('2d');
+  ctx.strokeStyle = '#9aa4ae';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(3, 23); ctx.lineTo(23, 3); ctx.stroke();
+  ctx.strokeStyle = '#6a747e';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(5, 21); ctx.lineTo(21, 5); ctx.stroke();
+  addTex(scene, 'wpn_rod', c);
+
+  // 摺椅 folding chair
+  c = makeCanvas(26, 26);
+  ctx = c.getContext('2d');
+  ctx.strokeStyle = '#b0bec5';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(5, 24); ctx.lineTo(11, 10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(21, 24); ctx.lineTo(13, 10); ctx.stroke();
+  ctx.fillStyle = '#78909c';
+  ctx.fillRect(7, 9, 12, 4);   // seat
+  ctx.fillRect(8, 1, 10, 7);   // backrest
+  addTex(scene, 'wpn_chair', c);
+}
+
+function generateProjectiles(scene) {
+  // cannonball
+  let c = makeCanvas(18, 18);
+  let ctx = c.getContext('2d');
+  ctx.fillStyle = '#21252b';
+  ctx.beginPath(); ctx.arc(9, 9, 8, 0, PI2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.beginPath(); ctx.arc(6, 6, 3, 0, PI2); ctx.fill();
+  addTex(scene, 'proj_cannonball', c);
+
+  // water wave crest
+  c = makeCanvas(36, 28);
+  ctx = c.getContext('2d');
+  const wg = ctx.createLinearGradient(0, 0, 0, 28);
+  wg.addColorStop(0, 'rgba(190,240,255,0.95)');
+  wg.addColorStop(1, 'rgba(40,120,200,0.85)');
+  ctx.fillStyle = wg;
+  ctx.beginPath();
+  ctx.moveTo(0, 28);
+  ctx.quadraticCurveTo(6, 4, 20, 8);
+  ctx.quadraticCurveTo(14, 12, 18, 16);
+  ctx.quadraticCurveTo(26, 10, 36, 14);
+  ctx.lineTo(36, 28);
+  ctx.closePath(); ctx.fill();
+  addTex(scene, 'proj_wave', c);
+
+  // chili powder cloud
+  c = makeCanvas(30, 30);
+  ctx = c.getContext('2d');
+  [[15, 15, 12], [8, 18, 8], [22, 18, 8], [15, 8, 7]].forEach(([x, y, r]) => {
+    const g = ctx.createRadialGradient(x, y, 1, x, y, r);
+    g.addColorStop(0, 'rgba(255,80,40,0.85)');
+    g.addColorStop(1, 'rgba(200,40,20,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 30, 30);
+  });
+  addTex(scene, 'proj_chili', c);
+
+  // thrown cleaver
+  c = makeCanvas(16, 16);
+  ctx = c.getContext('2d');
+  ctx.fillStyle = '#cfd8dc';
+  ctx.beginPath();
+  ctx.moveTo(2, 11); ctx.lineTo(10, 3); ctx.lineTo(13, 6); ctx.lineTo(6, 14);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(1, 11, 5, 4);
+  addTex(scene, 'proj_cleaver', c);
+
+  // shadow dagger
+  c = makeCanvas(18, 8);
+  ctx = c.getContext('2d');
+  ctx.fillStyle = '#b09cd8';
+  ctx.beginPath();
+  ctx.moveTo(0, 4); ctx.lineTo(13, 1); ctx.lineTo(13, 7);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#2a2438';
+  ctx.fillRect(13, 1.5, 5, 5);
+  addTex(scene, 'proj_dagger', c);
+}
+
+// Horizontal dry-brush ink stroke used by the stage intro cutscene.
+function generateBrush(scene) {
+  const W = 520;
+  const H = 130;
+  const c = makeCanvas(W, H);
+  const ctx = c.getContext('2d');
+  const mid = H / 2;
+  // main body: stacked horizontal strokes with ragged ends
+  ctx.fillStyle = '#efe6d0';
+  for (let i = 0; i < 46; i++) {
+    const t = i / 46;
+    const y = mid + (t - 0.5) * 74 + Math.sin(i * 2.7) * 4;
+    const x0 = 8 + Math.abs(Math.sin(i * 1.9)) * 26 * (1 - Math.abs(t - 0.5));
+    const x1 = W - 8 - Math.abs(Math.cos(i * 2.3)) * 60 * Math.abs(t - 0.5) * 2;
+    const thick = (1 - Math.abs(t - 0.5) * 1.7) * 9 + 1;
+    ctx.globalAlpha = 0.5 + (1 - Math.abs(t - 0.5) * 2) * 0.5;
+    ctx.beginPath();
+    ctx.ellipse((x0 + x1) / 2, y, (x1 - x0) / 2, thick, 0, 0, PI2);
+    ctx.fill();
+  }
+  // dry-brush streaks trailing off the right edge
+  ctx.globalAlpha = 0.55;
+  for (let i = 0; i < 14; i++) {
+    const y = mid + (i / 14 - 0.5) * 56 + Math.sin(i * 3.1) * 3;
+    ctx.fillRect(W - 130 + (i * 31) % 70, y, 50 + (i * 17) % 60, 2.4);
+  }
+  // ink spatter
+  ctx.globalAlpha = 0.8;
+  for (let i = 0; i < 18; i++) {
+    const x = (i * 89 + 40) % W;
+    const y = mid + (((i * 53) % 90) - 45);
+    ctx.beginPath();
+    ctx.arc(x, y, 1 + (i % 3), 0, PI2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  addTex(scene, 'fx_brush', c);
+}
+
 /* ------------------------------------------------------------------ */
 
 export function generateAllTextures(scene) {
   generateFighters(scene);
   generateItems(scene);
   generateParticles(scene);
+  generateWeapons(scene);
+  generateProjectiles(scene);
+  generateBrush(scene);
   genMongkok(scene);
-  genRooftop(scene);
   genAlley(scene);
+  genHarbour(scene);
+  genAirport(scene);
 }

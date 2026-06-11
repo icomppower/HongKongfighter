@@ -8,6 +8,8 @@
 
 import { GROUND_Y, FRAME_MS, CHAR_SCALE } from '../constants.js';
 import { PLAYER_MOVES } from '../data/moves.js';
+import { WEAPONS, weaponMove } from '../data/weapons.js';
+import { TouchState, TouchPresses } from '../ui/touch.js';
 import { Sfx } from '../systems/Sfx.js';
 
 const WALK_SPEED = 175;
@@ -60,11 +62,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.lastTapRight = -9999;
     this.running = false;
 
+    this.heldWeapon = null;
+    this.weaponHitLanded = false;
+    this.weaponHitCount = 0;
+    this.weaponIcon = scene.add.image(x, GROUND_Y - 100, 'wpn_bottle')
+      .setDepth(8).setScale(1.2).setVisible(false);
+
     const K = Phaser.Input.Keyboard.KeyCodes;
     this.keys = scene.input.keyboard.addKeys({
       up: K.UP, down: K.DOWN, left: K.LEFT, right: K.RIGHT,
       w: K.W, a: K.A, s: K.S, d: K.D,
-      z: K.Z, x: K.X, space: K.SPACE,
+      z: K.Z, x: K.X, j: K.J, k: K.K, space: K.SPACE,
     });
 
     // Press events are buffered rather than polled with JustDown: Phaser's
@@ -77,7 +85,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     };
     this.keyHandlers = {
       'keydown-Z': press('z'),
+      'keydown-J': press('z'),
       'keydown-X': press('x'),
+      'keydown-K': press('x'),
       'keydown-UP': press('jump'),
       'keydown-W': press('jump'),
       'keydown-SPACE': press('jump'),
@@ -89,35 +99,63 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     for (const [ev, fn] of Object.entries(this.keyHandlers)) {
       scene.input.keyboard.on(ev, fn);
     }
+
+    scene.input.mouse?.disableContextMenu();
+    this.pointerHandler = (pointer) => {
+      if (pointer.rightButtonDown()) {
+        this.pressed.x = true;
+      } else {
+        this.pressed.z = true;
+      }
+    };
+    scene.input.on('pointerdown', this.pointerHandler);
+
     scene.events.once('shutdown', () => {
       for (const [ev, fn] of Object.entries(this.keyHandlers)) {
         scene.input.keyboard?.off(ev, fn);
       }
+      scene.input.off('pointerdown', this.pointerHandler);
     });
 
     this.play('keung-idle');
   }
 
   // Latch buffered presses for this frame and clear the buffer.
+  // Touch button presses (MobileControls) merge in alongside key presses.
   consumeInput() {
-    this.frameInput = { ...this.pressed };
+    this.frameInput = {
+      z: this.pressed.z || TouchPresses.z,
+      x: this.pressed.x || TouchPresses.x,
+      jump: this.pressed.jump || TouchPresses.jump,
+      leftTap: this.pressed.leftTap,
+      rightTap: this.pressed.rightTap,
+    };
     this.pressed.z = false;
     this.pressed.x = false;
     this.pressed.jump = false;
     this.pressed.leftTap = false;
     this.pressed.rightTap = false;
+    TouchPresses.z = false;
+    TouchPresses.x = false;
+    TouchPresses.jump = false;
   }
 
   /* ---------------- input helpers ---------------- */
 
-  leftHeld() { return this.keys.left.isDown || this.keys.a.isDown; }
-  rightHeld() { return this.keys.right.isDown || this.keys.d.isDown; }
-  upHeld() { return this.keys.up.isDown || this.keys.w.isDown; }
-  downHeld() { return this.keys.down.isDown || this.keys.s.isDown; }
+  leftHeld() { return this.keys.left.isDown || this.keys.a.isDown || TouchState.left; }
+  rightHeld() { return this.keys.right.isDown || this.keys.d.isDown || TouchState.right; }
+  upHeld() { return this.keys.up.isDown || this.keys.w.isDown || TouchState.up; }
+  downHeld() { return this.keys.down.isDown || this.keys.s.isDown || TouchState.down; }
 
   /* ---------------- main update ---------------- */
 
   update(time, delta) {
+    // Held weapon indicator floats above the character.
+    this.weaponIcon.setVisible(!!this.heldWeapon && !this.isDead);
+    if (this.heldWeapon) {
+      this.weaponIcon.setPosition(this.x, this.y - 108 - Math.sin(time / 240) * 4);
+    }
+
     if (this.isDead) {
       this.groundCheck();
       return;
@@ -333,13 +371,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     // --- uppercut ---
     if (zNow && this.upHeld()) return this.startMove('uppercut', time);
+    // --- weapon swing replaces the grounded punch while armed ---
+    if (zNow && this.heldWeapon) return this.startMove('weaponSwing', time);
     // --- grounded normals ---
     return this.startMove(zNow ? 'punch1' : 'kick', time);
   }
 
   startMove(key, time) {
-    const def = PLAYER_MOVES[key];
+    const def = key === 'weaponSwing' ? weaponMove(this.heldWeapon) : PLAYER_MOVES[key];
     if (!def) return;
+    if (def.weapon) {
+      this.weaponHitLanded = false;
+      this.weaponHitCount = 0;
+    }
     if (def.cost) {
       if (this.sp < def.cost) return;
       this.sp -= def.cost;
@@ -400,9 +444,38 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.moveT >= totalMs) {
+      if (mv.weapon && this.weaponHitLanded) this.breakWeapon();
       this.setState_('idle');
       this.play('keung-idle', true);
     }
+  }
+
+  /* ---------------- weapons ---------------- */
+
+  holdWeapon(type) {
+    this.heldWeapon = type;
+    this.weaponIcon.setTexture(WEAPONS[type].tex);
+    this.scene.game.events.emit('hud:weapon', { type });
+  }
+
+  clearWeapon() {
+    this.heldWeapon = null;
+    this.scene.game.events.emit('hud:weapon', null);
+  }
+
+  breakWeapon() {
+    const def = WEAPONS[this.heldWeapon];
+    this.scene.popText(this.x, this.y - 110, `${def.zh} 爛咗!`, '#ff8a65', 13);
+    Sfx.play('break');
+    this.clearWeapon();
+  }
+
+  // 50% chance to lose the held weapon when hit — it clatters to the ground.
+  maybeDropWeapon(dir) {
+    if (!this.heldWeapon || Math.random() >= 0.5) return;
+    const type = this.heldWeapon;
+    this.clearWeapon();
+    this.scene.spawnWeapon(this.x - dir * 30, type, this.y - 70);
   }
 
   getActiveHitbox() {
@@ -459,11 +532,26 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.gainSP(0.15);
     this.scene.spawner?.notePlayerHit();
     this.scene.combat?.resetCombo();
+    this.maybeDropWeapon(dir);
 
     this.bufferedChain = null;
 
     if (this.hp <= 0) {
       this.die(dir);
+      return true;
+    }
+
+    if (mv.stun) {
+      // Stunned (chili powder): rooted in the stagger pose, no mercy invuln
+      // until the stun ends.
+      this.state = 'hurt';
+      this.currentMove = null;
+      this.restoreBody();
+      this.hurtUntil = time + mv.stun;
+      this.invulnUntil = Math.max(this.invulnUntil, time + mv.stun + 500);
+      this.setVelocityX(0);
+      this.play('keung-hurt', true);
+      this.scene.popText(this.x, this.y - 100, '辣眼!!', '#ff5d4d', 14);
       return true;
     }
 
@@ -524,6 +612,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.isDead = true;
     this.state = 'dead';
     this.currentMove = null;
+    if (this.heldWeapon) this.clearWeapon();
     this.setVelocity(dir * 240, -420);
     this.onGround = false;
     this.play('keung-fall', true);

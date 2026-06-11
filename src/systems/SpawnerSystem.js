@@ -5,6 +5,7 @@
 import { GAME_W, GROUND_Y } from '../constants.js';
 import { ENEMIES } from '../data/enemies.js';
 import { ENEMY_CLASSES } from '../entities/index.js';
+import { pickWeapon } from '../data/weapons.js';
 import { Sfx } from './Sfx.js';
 
 export default class SpawnerSystem {
@@ -49,11 +50,21 @@ export default class SpawnerSystem {
     Sfx.play('wave');
 
     if (wave.boss) {
+      // A weapon always spawns for the boss fight.
+      this.spawnWaveWeapon(1);
       this.startBossSequence(wave);
       return;
     }
 
+    this.spawnWaveWeapon(0.4);
     this.spawnWaveEnemies(wave);
+  }
+
+  spawnWaveWeapon(chance) {
+    if (Math.random() >= chance) return;
+    const type = pickWeapon(this.zone.weaponWeights);
+    const x = Phaser.Math.Between(this.lockLeft + 120, this.lockRight - 120);
+    this.scene.spawnWeapon(x, type);
   }
 
   spawnWaveEnemies(wave) {
@@ -88,12 +99,13 @@ export default class SpawnerSystem {
   }
 
   startBossSequence(wave) {
-    const cfg = ENEMIES.boss;
+    const type = wave.enemies[0].type;
+    const cfg = ENEMIES[type];
     Sfx.play('boss');
     this.scene.scene.launch('BossIntro', { name: cfg.name, title: cfg.title });
     this.scene.scene.pause();
     this.scene.game.events.once('bossintro:done', () => {
-      const boss = this.spawnEnemy('boss', this.lockRight - 140);
+      const boss = this.spawnEnemy(type, this.lockRight - 140);
       this.scene.boss = boss;
       this.bossSpawned = true;
       this.scene.game.events.emit('hud:bossbar', {
@@ -107,7 +119,7 @@ export default class SpawnerSystem {
     if (!this.activeWave) return;
 
     // Boss death ends the boss wave regardless of summoned minions.
-    if (this.activeWave.boss && enemy.type === 'boss') {
+    if (this.activeWave.boss && enemy.cfg.boss) {
       for (const e of this.scene.enemies.getChildren()) {
         if (e.active && !e.isDead && e !== enemy) e.forceKill();
       }
@@ -131,10 +143,11 @@ export default class SpawnerSystem {
     const cam = this.scene.cameras.main;
     const cx = cam.scrollX + GAME_W / 2;
 
-    let bonus = 300;
+    // Wave clear pays 1000 × stage number; an untouched wave adds 500.
+    let bonus = 1000 * (this.scene.zoneIndex + 1);
     if (!this.playerHitThisWave) {
-      bonus *= 2; // style bonus: untouched wave
-      this.scene.popText(cx, 200, 'PERFECT! 無傷 x2', '#ffe14d', 22);
+      bonus += 500;
+      this.scene.popText(cx, 200, 'PERFECT! 無傷 +500', '#ffe14d', 22);
     }
     this.scene.addScore(bonus);
     this.scene.popText(cx, 240, `WAVE CLEAR +${bonus}`, '#6dff6d', 18);

@@ -350,7 +350,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.comboHitsTaken += 1;
     this.lastHitAt = time;
 
-    if (this.type === 'boss') {
+    if (this.cfg.boss) {
       this.scene.game.events.emit('hud:bossbar', {
         hp: Math.max(0, this.hp), max: this.maxHp,
         name: `${this.cfg.name} ${this.cfg.title}`,
@@ -374,7 +374,9 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.play(`${this.type}-fall`, true);
     } else {
       this.state = 'hurt';
-      this.hurtUntil = time + (mv.hitstun || 16) * FRAME_MS;
+      // Stun weapons (bottle) pin the victim far longer than normal hitstun.
+      this.hurtUntil = time + (mv.stun || (mv.hitstun || 16) * FRAME_MS);
+      if (mv.stun) this.scene.popText(this.x, this.y - 100, '暈!', '#ffe14d', 14);
       this.setVelocityX(dir * Math.abs(mv.knockback.x) * 0.5);
       this.play(`${this.type}-hurt`, true);
     }
@@ -400,7 +402,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setVelocity(dir * (mv ? Math.abs(mv.knockback.x) : 200) + dir * 120, -380);
     this.onGround = false;
     this.play(`${this.type}-fall`, true);
-    if (this.type === 'boss') {
+    if (this.cfg.boss) {
       this.scene.game.events.emit('hud:bossbar', null);
       this.scene.cameras.main.shake(400, 0.008);
       Sfx.play('ko');

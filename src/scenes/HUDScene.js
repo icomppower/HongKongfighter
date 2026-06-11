@@ -2,9 +2,12 @@
 // `hud:*` events emitted on the global game event bus.
 
 import { GAME_W, GAME_H } from '../constants.js';
+import { WEAPONS } from '../data/weapons.js';
 import HealthBar from '../ui/HealthBar.js';
 import SPBar from '../ui/SPBar.js';
 import ComboDisplay from '../ui/ComboDisplay.js';
+import MobileControls from '../ui/MobileControls.js';
+import { isTouchDevice } from '../ui/touch.js';
 
 export default class HUDScene extends Phaser.Scene {
   constructor() {
@@ -22,6 +25,14 @@ export default class HUDScene extends Phaser.Scene {
     }).setOrigin(1, 0);
 
     this.combo = new ComboDisplay(this, GAME_W - 130, 160);
+
+    // Held weapon indicator.
+    this.weaponIcon = this.add.image(30, 106, 'wpn_bottle').setScale(1.4).setVisible(false);
+    this.weaponText = this.add.text(46, 106, '', {
+      fontFamily: 'monospace', fontSize: '13px', color: '#7df0ff', fontStyle: 'bold',
+    }).setOrigin(0, 0.5);
+
+    if (isTouchDevice()) this.mobileControls = new MobileControls(this);
 
     this.bossBar = new HealthBar(this, GAME_W / 2 - 210, GAME_H - 46, 420, 16, {
       label: '', colors: [0xb04dff, 0x4a148c],
@@ -59,9 +70,21 @@ export default class HUDScene extends Phaser.Scene {
       'hud:warn': () => this.flashWarn(),
       'hud:banner': ({ text, sub }) => this.showBanner(text, sub),
       'hud:bossbar': (data) => this.updateBossBar(data),
+      'hud:weapon': (data) => {
+        if (!data) {
+          this.weaponIcon.setVisible(false);
+          this.weaponText.setText('');
+          return;
+        }
+        const def = WEAPONS[data.type];
+        this.weaponIcon.setTexture(def.tex).setVisible(true);
+        this.weaponText.setText(`${def.zh} ${def.en}`);
+      },
       'hud:reset': () => {
         this.bossBar.setVisible(false);
         this.bossName.setVisible(false);
+        this.weaponIcon.setVisible(false);
+        this.weaponText.setText('');
       },
     };
     for (const [name, fn] of Object.entries(this.handlers)) ev.on(name, fn);

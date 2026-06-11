@@ -32,11 +32,34 @@ export const PALETTES = {
     pants: '#1a237e', pantsDark: '#101743', shoes: '#eeeeee',
     skin: '#f1c27d', hair: '#212121',
   },
-  boss: {
-    jacket: '#eceff1', sleeve: '#ffffff', sleeveDark: '#b0bec5',
-    pants: '#cfd8dc', pantsDark: '#90a4ae', shoes: '#3e2723',
-    skin: '#e8b88a', hair: '#263238', belt: '#ffd700', chain: '#ffd700',
+  dragon: {
+    jacket: '#1b5e20', sleeve: '#2e7d32', sleeveDark: '#0d3c11',
+    pants: '#212121', pantsDark: '#101010', shoes: '#3e2723',
+    skin: '#e8b88a', hair: '#cfd8dc', belt: '#ffd700', chain: '#ffd700',
     bulk: 14, aura: 'rgba(255,90,80,0.95)',
+  },
+  pirate: {
+    jacket: '#1a237e', sleeve: '#283593', sleeveDark: '#0d1257',
+    pants: '#263238', pantsDark: '#11181c', shoes: '#1a1a1a',
+    skin: '#d9a066', hair: '#211a14', band: '#d32f2f', belt: '#ffd700',
+    bulk: 13, aura: 'rgba(77,217,255,0.95)',
+  },
+  queen: {
+    jacket: '#ad1457', sleeve: '#d81b60', sleeveDark: '#78092f',
+    pants: '#4a148c', pantsDark: '#2a0b50', shoes: '#212121',
+    skin: '#f1c27d', hair: '#1a1a1a', belt: '#ffd54f', knife: true,
+    bulk: 11, aura: 'rgba(255,140,60,0.95)',
+  },
+  shadow: {
+    jacket: '#16161d', sleeve: '#22222c', sleeveDark: '#0b0b10',
+    pants: '#101016', pantsDark: '#07070b', shoes: '#0a0a0a',
+    skin: '#dde3e8', hair: '#050507', knife: true,
+    bulk: 11, aura: 'rgba(176,77,255,0.95)',
+  },
+  clone: {
+    jacket: '#23232e', sleeve: '#2e2e3a', sleeveDark: '#15151d',
+    pants: '#1a1a22', pantsDark: '#0e0e13', shoes: '#111111',
+    skin: '#8c929a', hair: '#0a0a0e', knife: true,
   },
 };
 
@@ -108,28 +131,26 @@ export const ENEMIES = {
       },
     },
   },
-  boss: {
-    name: '三合會頭目', title: '龍頭 · 大龍', hp: 40, points: 2000, scale: 2.0,
-    speed: 80, runSpeed: 175, detect: 9999, attackRange: 64,
-    phases: [0.75, 0.4], // HP fractions where phase transitions occur
+  // ---- bosses (cfg.boss marks them for HUD / wave / scoring logic) ----
+
+  dragon: {
+    name: '龍叔', title: 'UNCLE DRAGON', boss: true,
+    hp: 60, points: 2000, scale: 2.0,
+    speed: 78, runSpeed: 170, detect: 9999, attackRange: 64,
+    phases: [0.66, 0.33], // P2: shoulder bash · P3: ground pound berserk
+    roars: { 2: '後生仔, 唔好咁串!', 3: '城寨係我嘅!!' },
     moves: {
       jab: {
         anim: 'punch1', startup: 11, active: 4, recovery: 12,
-        damage: 7, freeze: 8, knockback: { x: 190, y: 0 },
+        damage: 8, freeze: 8, knockback: { x: 190, y: 0 },
         hitbox: { fx: 16, fy: 31, w: 26, h: 14 },
         range: 66, cooldown: 750, crouchDodgeable: true, sfx: 'punch',
       },
       heavy: {
         anim: 'punch3', startup: 17, active: 4, recovery: 20,
-        damage: 10, freeze: 10, knockback: { x: 320, y: -240 },
+        damage: 12, freeze: 10, knockback: { x: 320, y: -240 },
         hitbox: { fx: 18, fy: 30, w: 30, h: 18 },
         range: 70, cooldown: 1900, knockdown: true, sfx: 'kick',
-      },
-      charge: {
-        anim: 'specialA', startup: 18, active: 14, recovery: 22,
-        damage: 12, freeze: 11, knockback: { x: 360, y: -240 },
-        hitbox: { fx: 16, fy: 31, w: 32, h: 24 },
-        cooldown: 4000, dash: 480, knockdown: true, sfx: 'special',
       },
       slam: {
         anim: 'grab', startup: 19, active: 6, recovery: 30,
@@ -137,11 +158,158 @@ export const ENEMIES = {
         hitbox: { fx: 15, fy: 30, w: 24, h: 30 },
         range: 66, cooldown: 3600, grab: true, sfx: 'hit',
       },
-      special: {
-        anim: 'specialB', startup: 40, active: 22, recovery: 32,
+      bash: { // P2+ shoulder bash
+        anim: 'specialA', startup: 18, active: 14, recovery: 22,
+        damage: 14, freeze: 11, knockback: { x: 380, y: -260 },
+        hitbox: { fx: 16, fy: 31, w: 32, h: 24 },
+        cooldown: 3800, dash: 500, knockdown: true, sfx: 'special',
+      },
+      pound: { // P3 ground pound — low + wide: jump to avoid
+        anim: 'specialB', startup: 38, active: 20, recovery: 30,
         damage: 18, freeze: 12, knockback: { x: 420, y: -480 },
-        hitbox: { fx: 0, fy: 22, w: 170, h: 34 }, // low + wide: jump to avoid
-        cooldown: 6500, knockdown: true, aura: true, sfx: 'special',
+        hitbox: { fx: 0, fy: 22, w: 170, h: 34 },
+        cooldown: 6000, knockdown: true, aura: true, sfx: 'special',
+      },
+    },
+  },
+
+  pirate: {
+    name: '海盜王', title: 'PIRATE KING', boss: true,
+    hp: 70, points: 4000, scale: 2.0,
+    speed: 82, runSpeed: 180, detect: 9999, attackRange: 66,
+    phases: [0.66, 0.33], // P2: wave attack · P3: summons goons
+    roars: { 2: '成個海港都係我嘅!', 3: '兄弟們, 上呀!!' },
+    moves: {
+      hook: {
+        anim: 'punch3', startup: 13, active: 4, recovery: 16,
+        damage: 10, freeze: 9, knockback: { x: 240, y: 0 },
+        hitbox: { fx: 17, fy: 31, w: 28, h: 16 },
+        range: 68, cooldown: 1100, crouchDodgeable: true, sfx: 'punch',
+      },
+      cannonball: { // lobbed arc — crouch under or step out
+        anim: 'specialA', startup: 24, active: 4, recovery: 26,
+        damage: 12, freeze: 10, knockback: { x: 300, y: -320 },
+        hitbox: { fx: 0, fy: 0, w: 0, h: 0 },
+        cooldown: 3400, knockdown: true, sfx: 'special',
+        projectile: {
+          tex: 'proj_cannonball', vx: 360, vy: -480, gravity: 1100,
+          damage: 12, knockback: { x: 300, y: -320 }, knockdown: true,
+          w: 18, h: 18, fy: 40, groundDies: true,
+        },
+      },
+      wave: { // P2+ traveling ground wave — jump it
+        anim: 'specialB', startup: 30, active: 4, recovery: 28,
+        damage: 14, freeze: 11, knockback: { x: 360, y: -420 },
+        hitbox: { fx: 0, fy: 0, w: 0, h: 0 },
+        cooldown: 5200, knockdown: true, aura: true, sfx: 'special',
+        projectile: {
+          tex: 'proj_wave', vx: 320, vy: 0, gravity: 0,
+          damage: 14, knockback: { x: 360, y: -420 }, knockdown: true,
+          w: 34, h: 26, fy: 13, low: true,
+        },
+      },
+      kick: {
+        anim: 'kick', startup: 15, active: 4, recovery: 18,
+        damage: 9, freeze: 9, knockback: { x: 220, y: 0 },
+        hitbox: { fx: 18, fy: 30, w: 26, h: 16 },
+        range: 64, cooldown: 1500, sfx: 'kick',
+      },
+    },
+  },
+
+  queen: {
+    name: '夜市女王', title: 'MARKET QUEEN', boss: true,
+    hp: 65, points: 6000, scale: 1.85,
+    speed: 100, runSpeed: 205, detect: 9999, attackRange: 62,
+    phases: [0.66, 0.33], // P2: chili powder · P3: multi-projectile
+    roars: { 2: '辣死你!', 3: '全部刀, 飛!!' },
+    moves: {
+      slash: { // cleaver slash — fast two-hit pressure
+        anim: 'poke', startup: 9, active: 4, recovery: 12,
+        damage: 9, freeze: 9, knockback: { x: 180, y: 0 },
+        hitbox: { fx: 20, fy: 32, w: 30, h: 12 },
+        range: 70, cooldown: 800, crouchDodgeable: true, lunge: 300, sfx: 'punch',
+      },
+      heavy: {
+        anim: 'punch3', startup: 16, active: 4, recovery: 18,
+        damage: 11, freeze: 10, knockback: { x: 300, y: -220 },
+        hitbox: { fx: 18, fy: 30, w: 28, h: 16 },
+        range: 66, cooldown: 2000, knockdown: true, sfx: 'kick',
+      },
+      chili: { // P2+ chili powder cloud — stuns on contact
+        anim: 'specialA', startup: 20, active: 4, recovery: 22,
+        damage: 5, freeze: 8, knockback: { x: 80, y: 0 },
+        hitbox: { fx: 0, fy: 0, w: 0, h: 0 },
+        cooldown: 4200, sfx: 'special',
+        projectile: {
+          tex: 'proj_chili', vx: 220, vy: 0, gravity: 0,
+          damage: 5, knockback: { x: 80, y: 0 }, stun: 1500,
+          w: 30, h: 30, fy: 42, lifetime: 1400,
+        },
+      },
+      throwfan: { // P3 three-cleaver fan
+        anim: 'specialB', startup: 26, active: 4, recovery: 26,
+        damage: 10, freeze: 9, knockback: { x: 240, y: -180 },
+        hitbox: { fx: 0, fy: 0, w: 0, h: 0 },
+        cooldown: 4800, knockdown: true, aura: true, sfx: 'special',
+        projectile: {
+          tex: 'proj_cleaver', vx: 420, vy: -120, gravity: 420, spin: true,
+          damage: 10, knockback: { x: 240, y: -180 }, knockdown: true,
+          w: 16, h: 16, fy: 46, count: 3, spread: 170, groundDies: true,
+        },
+      },
+    },
+  },
+
+  shadow: {
+    name: '影', title: 'THE SHADOW', boss: true,
+    hp: 100, points: 8000, scale: 1.9,
+    speed: 120, runSpeed: 240, detect: 9999, attackRange: 60,
+    phases: [0.75, 0.5, 0.25], // P2: clones · P3: darkness · P4: mask off
+    roars: { 2: '邊個係真身?', 3: '黑暗就係我嘅武器', 4: '......終於認真了' },
+    moves: {
+      dagger: { // dagger combo opener
+        anim: 'poke', startup: 8, active: 4, recovery: 10,
+        damage: 10, freeze: 9, knockback: { x: 170, y: 0 },
+        hitbox: { fx: 20, fy: 32, w: 28, h: 12 },
+        range: 66, cooldown: 700, crouchDodgeable: true, lunge: 340, sfx: 'punch',
+      },
+      heavy: {
+        anim: 'kick', startup: 13, active: 4, recovery: 15,
+        damage: 12, freeze: 10, knockback: { x: 300, y: -240 },
+        hitbox: { fx: 18, fy: 30, w: 28, h: 16 },
+        range: 64, cooldown: 1700, knockdown: true, sfx: 'kick',
+      },
+      dash: { // teleport-like dash strike
+        anim: 'specialA', startup: 14, active: 10, recovery: 18,
+        damage: 14, freeze: 11, knockback: { x: 360, y: -260 },
+        hitbox: { fx: 16, fy: 31, w: 32, h: 24 },
+        cooldown: 3200, dash: 640, knockdown: true, sfx: 'special',
+      },
+      knives: { // thrown dagger
+        anim: 'specialB', startup: 18, active: 4, recovery: 18,
+        damage: 10, freeze: 9, knockback: { x: 200, y: 0 },
+        hitbox: { fx: 0, fy: 0, w: 0, h: 0 },
+        cooldown: 2800, sfx: 'special',
+        projectile: {
+          tex: 'proj_dagger', vx: 560, vy: 0, gravity: 0,
+          damage: 10, knockback: { x: 200, y: 0 },
+          w: 18, h: 8, fy: 34, lifetime: 1600,
+        },
+      },
+    },
+  },
+
+  // 影分身 — Shadow's clones: fragile but aggressive copies.
+  clone: {
+    name: '影分身', hp: 3, points: 150, scale: 1.9,
+    speed: 130, runSpeed: 230, detect: 9999, attackRange: 58,
+    moves: {
+      dagger: {
+        anim: 'poke', startup: 10, active: 4, recovery: 14,
+        damage: 7, freeze: 8, knockback: { x: 150, y: 0 },
+        hitbox: { fx: 20, fy: 32, w: 26, h: 12 },
+        range: 62, cooldown: 1100, crouchDodgeable: true, lunge: 280, sfx: 'punch',
       },
     },
   },

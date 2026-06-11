@@ -51,12 +51,23 @@ export default class CombatSystem {
   }
 
   resolvePlayerHit(player, enemy, hb, time) {
-    player.hitRegistry.add(enemy);
     const mv = player.currentMove;
     if (!mv) return;
 
+    // Weapons hit a limited number of targets per swing (chair: 2, rod: all).
+    if (mv.weapon && player.weaponHitCount >= mv.maxTargets) return;
+    player.hitRegistry.add(enemy);
+
     const landed = enemy.takeHit(mv, player.x, time);
     if (!landed) return;
+
+    if (mv.weapon) {
+      player.weaponHitLanded = true;
+      player.weaponHitCount += 1;
+      if (mv.wwe && enemy.isDead) {
+        this.scene.popText(enemy.x, enemy.y - 130, 'BAH GAWD!! 摺椅!!', '#ffe14d', 18);
+      }
+    }
 
     this.combo += 1;
     this.bestCombo = Math.max(this.bestCombo, this.combo);

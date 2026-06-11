@@ -5,12 +5,20 @@ import Goon from './Goon.js';
 import Enforcer from './Enforcer.js';
 import KnifeFighter from './KnifeFighter.js';
 import Acrobat from './Acrobat.js';
-import Boss from './Boss.js';
+import Clone from './Clone.js';
+import Dragon from './Dragon.js';
+import Pirate from './Pirate.js';
+import Queen from './Queen.js';
+import Shadow from './Shadow.js';
 
 export const ENEMY_CLASSES = {
   goon: Goon,
   enforcer: Enforcer,
   knife: KnifeFighter,
   acrobat: Acrobat,
-  boss: Boss,
+  clone: Clone,
+  dragon: Dragon,
+  pirate: Pirate,
+  queen: Queen,
+  shadow: Shadow,
 };

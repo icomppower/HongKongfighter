@@ -104,6 +104,16 @@ export default class GameOverScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.input.keyboard.off('keydown', this.keyHandler);
     });
+
+    // Touch devices have no keyboard: a tap accepts the initials as shown.
+    this.input.once('pointerdown', () => {
+      if (!this.entering) return;
+      this.entering = false;
+      this.saveScore(this.initials.join(''));
+      Sfx.play('pickup');
+      this.cursor.setVisible(false);
+      this.showLeaderboardAndPrompts();
+    });
   }
 
   handleEntryKey(event) {
@@ -154,36 +164,44 @@ export default class GameOverScene extends Phaser.Scene {
         }).setOrigin(0.5);
     });
 
+    // Continues: 3 max, each costs 1000 score.
     const checkpoint = this.loadCheckpoint();
-    const canContinue = !this.win && checkpoint;
+    const used = checkpoint?.continues ?? 0;
+    const canContinue = !this.win && checkpoint && used < 3;
     const prompts = [];
     if (canContinue) {
-      prompts.push(`[C] CONTINUE — ${ZONES[checkpoint.zoneIndex].nameEn}`);
+      prompts.push(`[C] CONTINUE (-1000分 · ${3 - used}次) — ${ZONES[checkpoint.zoneIndex].nameEn}`);
     }
-    prompts.push('[M] MENU', '[R] RESTART FROM ZONE 1');
+    prompts.push('[M] MENU', '[R] RESTART');
 
     this.add.text(GAME_W / 2, GAME_H - 60, prompts.join('    '), {
-      fontFamily: 'monospace', fontSize: '15px', color: '#6dff6d', fontStyle: 'bold',
+      fontFamily: 'monospace', fontSize: '14px', color: '#6dff6d', fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    if (canContinue) {
-      this.input.keyboard.on('keydown-C', () => {
-        Sfx.play('select');
-        this.scene.start('Game', {
-          zoneIndex: checkpoint.zoneIndex,
-          score: checkpoint.score,
-          lives: 3,
-        });
+    const doContinue = () => {
+      Sfx.play('select');
+      this.scene.start('StageIntro', {
+        zoneIndex: checkpoint.zoneIndex,
+        score: Math.max(0, checkpoint.score - 1000),
+        lives: 3,
+        continues: used + 1,
       });
-    }
+    };
+    const doRestart = () => {
+      Sfx.play('select');
+      this.scene.start('StageIntro', {
+        zoneIndex: 0, score: 0, lives: 3, continues: 0, fresh: true,
+      });
+    };
+
+    if (canContinue) this.input.keyboard.on('keydown-C', doContinue);
     this.input.keyboard.on('keydown-M', () => {
       Sfx.play('select');
       this.scene.start('Menu');
     });
-    this.input.keyboard.on('keydown-R', () => {
-      Sfx.play('select');
-      this.scene.start('Game', { zoneIndex: 0, score: 0, lives: 3, fresh: true });
-    });
+    this.input.keyboard.on('keydown-R', doRestart);
+    // Tap continues from the checkpoint (or restarts) on touch devices.
+    this.input.on('pointerdown', () => (canContinue ? doContinue() : doRestart()));
   }
 
   loadCheckpoint() {

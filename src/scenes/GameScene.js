@@ -8,6 +8,7 @@ import {
 } from '../constants.js';
 import { ZONES } from '../data/levels.js';
 import { ITEM_TYPES } from '../data/enemies.js';
+import { WEAPONS } from '../data/weapons.js';
 import { comboMultiplier } from '../data/moves.js';
 import Player from '../entities/Player.js';
 import CombatSystem from '../systems/CombatSystem.js';
@@ -24,6 +25,7 @@ export default class GameScene extends Phaser.Scene {
     this.zoneIndex = data.zoneIndex ?? 0;
     this.score = data.score ?? 0;
     this.lives = data.lives ?? 3;
+    this.continues = data.continues ?? 0;
     this.zone = ZONES[this.zoneIndex];
     this.boss = null;
     this.ending = false;
@@ -39,6 +41,8 @@ export default class GameScene extends Phaser.Scene {
     this.player = new Player(this, 120);
     this.enemies = this.add.group();
     this.items = this.add.group();
+    this.weapons = this.add.group();
+    this.projectiles = this.add.group();
 
     this.combat = new CombatSystem(this);
     this.spawner = new SpawnerSystem(this, zone);
@@ -50,9 +54,17 @@ export default class GameScene extends Phaser.Scene {
     this.buildParticles();
     if (zone.rain) this.buildRain();
 
+    // Full-screen darkness overlay (The Shadow's phase 3).
+    this.darkOverlay = this.add.rectangle(0, 0, GAME_W, GAME_H, 0x000004, 0)
+      .setOrigin(0).setScrollFactor(0).setDepth(DEPTH.RAIN + 1);
+
     this.events.on('enemy:died', this.onEnemyDied, this);
+    this.events.on('darkness:on', this.setDarkness, this);
+    this.events.on('darkness:off', this.clearDarkness, this);
     this.events.once('shutdown', () => {
       this.events.off('enemy:died', this.onEnemyDied, this);
+      this.events.off('darkness:on', this.setDarkness, this);
+      this.events.off('darkness:off', this.clearDarkness, this);
     });
 
     // HUD scene runs in parallel.
@@ -137,6 +149,14 @@ export default class GameScene extends Phaser.Scene {
     this.orbEmitter.explode(16, target.x, target.y - 50);
   }
 
+  setDarkness() {
+    this.tweens.add({ targets: this.darkOverlay, fillAlpha: 0.72, duration: 900 });
+  }
+
+  clearDarkness() {
+    this.tweens.add({ targets: this.darkOverlay, fillAlpha: 0, duration: 600 });
+  }
+
   popText(x, y, str, color = '#ffffff', size = 14) {
     const t = this.add.text(x, y, str, {
       fontFamily: 'Arial Black, sans-serif', fontSize: `${size}px`,
@@ -164,12 +184,12 @@ export default class GameScene extends Phaser.Scene {
     this.spawnHitSpark(enemy.x, enemy.y - 50, true);
 
     // 30% drop chance on regular kills.
-    if (enemy.type !== 'boss' && Math.random() < 0.3) {
+    if (!enemy.cfg.boss && Math.random() < 0.3) {
       const type = Phaser.Utils.Array.GetRandom(['bun', 'hongbao', 'drink']);
       this.spawnItem(enemy.x, enemy.y - 60, type);
     }
 
-    if (enemy.type === 'boss') {
+    if (enemy.cfg.boss) {
       this.onBossDefeated(enemy);
     }
   }
@@ -187,6 +207,82 @@ export default class GameScene extends Phaser.Scene {
     item.setVelocity(Phaser.Math.Between(-80, 80), -340);
     this.items.add(item);
     return item;
+  }
+
+  /* ---------------- weapons ---------------- */
+
+  spawnWeapon(x, type, fromY = GROUND_Y - 200) {
+    const def = WEAPONS[type];
+    const wpn = this.physics.add.sprite(x, fromY, def.tex)
+      .setDepth(DEPTH.ITEM).setScale(1.7);
+    wpn.weaponType = type;
+    wpn.setVelocity(Phaser.Math.Between(-40, 40), -200);
+    // Idle shimmer so drops read as pickups.
+    this.tweens.add({
+      targets: wpn, alpha: 0.55, duration: 420, yoyo: true, repeat: -1,
+    });
+    this.weapons.add(wpn);
+    return wpn;
+  }
+
+  pickupWeapon(wpn) {
+    const def = WEAPONS[wpn.weaponType];
+    this.player.holdWeapon(wpn.weaponType);
+    this.popText(wpn.x, wpn.y - 24, `${def.zh} ${def.en}`, '#7df0ff', 13);
+    Sfx.play('pickup');
+    wpn.destroy();
+  }
+
+  /* ---------------- boss projectiles ---------------- */
+
+  spawnProjectile(x, y, vx, vy, spec, owner) {
+    const proj = this.physics.add.sprite(x, y, spec.tex)
+      .setDepth(DEPTH.FX).setScale(1.6);
+    proj.setFlipX(vx < 0);
+    proj.spec = spec;
+    proj.owner = owner;
+    proj.diesAt = this.time.now + (spec.lifetime || 4000);
+    proj.setVelocity(vx, vy);
+    // Arcade body gravity stacks on world gravity — offset to hit spec.gravity.
+    if (spec.gravity > 0) proj.body.setGravityY(spec.gravity - 2200);
+    else proj.body.setAllowGravity(false);
+    this.projectiles.add(proj);
+    return proj;
+  }
+
+  updateProjectiles(time) {
+    const p = this.player;
+    for (const proj of this.projectiles.getChildren()) {
+      if (!proj.active) continue;
+      const spec = proj.spec;
+      if (spec.spin) proj.rotation += 0.28;
+
+      const grounded = proj.y >= GROUND_Y - 4 && proj.body.velocity.y >= 0;
+      if (time >= proj.diesAt || (spec.groundDies && grounded)
+          || proj.x < -60 || proj.x > this.zone.width + 60) {
+        this.spawnDust(proj.x, Math.min(proj.y, GROUND_Y));
+        proj.destroy();
+        continue;
+      }
+
+      const w = spec.w * 1.6;
+      const h = spec.h * 1.6;
+      const rect = new Phaser.Geom.Rectangle(proj.x - w / 2, proj.y - h / 2, w, h);
+      if (!p.isDead && Phaser.Geom.Rectangle.Overlaps(rect, p.getHurtbox())) {
+        const landed = p.takeHit({
+          damage: spec.damage,
+          knockback: spec.knockback,
+          knockdown: spec.knockdown || false,
+          stun: spec.stun,
+          crouchDodgeable: false,
+        }, proj.owner?.x ?? proj.x - Math.sign(proj.body.velocity.x || 1), time);
+        if (landed) {
+          this.spawnHitSpark(proj.x, proj.y, spec.damage >= 10);
+          Sfx.play('hurt');
+          proj.destroy();
+        }
+      }
+    }
   }
 
   collectItem(item) {
@@ -241,10 +337,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     const next = this.zoneIndex + 1;
-    this.popText(this.cameras.main.scrollX + GAME_W / 2, 220, '前進! NEXT ZONE', '#6dff6d', 26);
+    this.popText(this.cameras.main.scrollX + GAME_W / 2, 220, '前進! NEXT STAGE', '#6dff6d', 26);
     this.cameras.main.fadeOut(900, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
-      this.scene.restart({ zoneIndex: next, score: this.score, lives: this.lives });
+      this.scene.stop('HUD');
+      this.scene.start('StageIntro', {
+        zoneIndex: next, score: this.score, lives: this.lives, continues: this.continues,
+      });
     });
   }
 
@@ -264,6 +363,7 @@ export default class GameScene extends Phaser.Scene {
       localStorage.setItem(STORAGE.CHECKPOINT, JSON.stringify({
         zoneIndex: this.zoneIndex,
         score: this.score,
+        continues: this.continues,
       }));
     } catch { /* storage unavailable — checkpoints just won't persist */ }
   }
@@ -293,9 +393,28 @@ export default class GameScene extends Phaser.Scene {
 
     this.updateParallax();
     this.updateItems();
+    this.updateWeaponPickups();
+    this.updateProjectiles(time);
     this.drawShadows();
     this.drawBarriers(time);
     this.checkZoneExit();
+  }
+
+  updateWeaponPickups() {
+    const p = this.player;
+    for (const wpn of this.weapons.getChildren()) {
+      if (!wpn.active) continue;
+      if (wpn.y >= GROUND_Y) {
+        wpn.y = GROUND_Y;
+        if (wpn.body.velocity.y > 0) wpn.setVelocity(0, 0);
+      }
+      // One weapon at a time: walk over a drop while holding and it stays.
+      if (!p.isDead && !p.heldWeapon
+          && Math.abs(wpn.x - p.x) < 42
+          && Math.abs(wpn.y - (p.y - 40)) < 70) {
+        this.pickupWeapon(wpn);
+      }
+    }
   }
 
   updateParallax() {
