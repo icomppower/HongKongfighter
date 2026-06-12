@@ -1,40 +1,17 @@
-// Glory to Hong Kong (願榮光歸香港) — programmatic melody via Tone.js.
-// No external file; all notes are hard-coded, matching the project convention
-// of zero external assets.
-
+import { Midi } from '@tonejs/midi';
 import * as Tone from 'tone';
-
-const BPM = 72;
-const BEAT = 60 / BPM;
-
-// [note, startBeat, durationBeats]  — 32-beat loop (two 16-beat phrases)
-const MELODY = [
-  // Phrase A — chorus opening "願榮光歸香港"
-  ['Bb4', 0,   1.5], ['C5',  1.5, 0.5], ['D5',  2,  2],
-  ['Eb5', 4,   1  ], ['D5',  5,   1  ], ['C5',  6,  2],
-  ['Bb4', 8,   1.5], ['C5',  9.5, 0.5], ['D5',  10, 2],
-  ['F5',  12,  1  ], ['Eb5', 13,  1  ], ['D5',  14, 1], ['C5', 15, 1],
-  // Phrase B — second half, resolves back to Bb
-  ['Bb4', 16,  1  ], ['G4',  17,  1  ], ['F4',  18, 2],
-  ['G4',  20,  1  ], ['Bb4', 21,  1  ], ['C5',  22, 2],
-  ['D5',  24,  1  ], ['C5',  25,  1  ], ['Bb4', 26, 2],
-  ['F4',  28,  1  ], ['G4',  29,  1  ], ['Bb4', 30, 2],
-];
-
-const LOOP_BEATS = 32;
-const LOOP_END   = LOOP_BEATS * BEAT;
 
 export class MidiPlayer {
   constructor() {
     this.synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
-      envelope: { attack: 0.04, decay: 0.12, sustain: 0.45, release: 1.2 },
+      envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.8 },
       volume: -10,
     }).toDestination();
 
-    this.isMuted = false;
-    this._part  = null;
+    this.isMuted  = false;
     this._started = false;
+    this._part    = null;
   }
 
   async play() {
@@ -42,27 +19,33 @@ export class MidiPlayer {
     this._started = true;
 
     await Tone.start();
-    Tone.Transport.bpm.value = BPM;
-    Tone.Transport.cancel();
 
-    const events = MELODY.map(([note, startBeat, durBeats]) => ({
-      time:     startBeat * BEAT,
-      note,
-      duration: durBeats  * BEAT,
-    }));
+    const res  = await fetch('/audio/glory_to_hk.mid');
+    const buf  = await res.arrayBuffer();
+    const midi = new Midi(buf);
+
+    Tone.Transport.cancel();
+    Tone.Transport.bpm.value = midi.header.tempos[0]?.bpm ?? 120;
+
+    const notes = [];
+    midi.tracks.forEach(track => {
+      track.notes.forEach(n => {
+        notes.push({ time: n.time, note: n.name, duration: n.duration, velocity: n.velocity });
+      });
+    });
 
     this._part = new Tone.Part((time, ev) => {
       if (!this.isMuted) {
-        this.synth.triggerAttackRelease(ev.note, ev.duration, time, 0.55);
+        this.synth.triggerAttackRelease(ev.note, ev.duration, time, ev.velocity);
       }
-    }, events);
+    }, notes);
 
-    this._part.loop     = true;
-    this._part.loopEnd  = LOOP_END;
+    this._part.loop    = true;
+    this._part.loopEnd = midi.duration;
     this._part.start(0);
 
     Tone.Transport.loop    = true;
-    Tone.Transport.loopEnd = LOOP_END;
+    Tone.Transport.loopEnd = midi.duration;
     Tone.Transport.start();
   }
 
@@ -80,5 +63,4 @@ export class MidiPlayer {
   }
 }
 
-// Singleton shared across scenes.
 export const midiPlayer = new MidiPlayer();
