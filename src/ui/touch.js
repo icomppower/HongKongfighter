@@ -3,7 +3,7 @@
 // by Player.consumeInput() exactly like buffered key presses.
 
 export const TouchState = {
-  left: false, right: false, up: false, down: false,
+  left: false, right: false, up: false, down: false, block: false,
 };
 
 export const TouchPresses = {

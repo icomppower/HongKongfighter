@@ -12,6 +12,7 @@
 - v2.0: 4 HK stages, bosses, weapons, ink brush cutscenes, mobile controls
 - v2.1: mobile menu fix, HP refill items, boss defeat rewards
 - v2.2: menu controls display fix, ki blast range attack ✅, mobile canvas size fix
+- v2.3: block system ✅, menu move list ✅ (MIDI pending)
 
 ## ARCHITECTURE
 src/
@@ -133,6 +134,12 @@ Continues: 3 max, costs 1000 score each
 - Boss name card slides from right
 - Red camera flash
 - 1s pause → boss fight begins
+
+## BLOCK SYSTEM 擋
+input: Hold L key / 🛡 mobile button
+effect: blocks all damage, 格! popup, small pushback, alpha flash
+movement: 50% speed while blocking, cannot attack
+status: ✅ implemented v2.3
 
 ## RESPONSIVE / MOBILE
 Canvas: Phaser.Scale.FIT, 680×340 base

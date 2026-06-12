@@ -64,23 +64,36 @@ export default class MenuScene extends Phaser.Scene {
         });
     });
 
-    // Controls
-    const cx = GAME_W / 2 + 60;
-    const lines = [
-      '移動  ARROWS / WASD   (double-tap to run)',
-      '跳    UP / W / SPACE  (double jump)',
-      '蹲    DOWN / S        (dodge high attacks)',
-      '拳    Z   (Z Z Z combo · Z then X launcher)',
-      '腳    X   (X then Z sweep · UP+Z uppercut)',
-      '絕招  Z+X 龍拳 (1 SP) · DOWN+Z+X 旋風腿 (2 SP)',
-    ];
-    this.add.text(cx, 350, '操作 CONTROLS', {
-      fontFamily: 'monospace', fontSize: '15px', color: '#4dd9ff', fontStyle: 'bold',
+    // Move list panel
+    const cx = GAME_W / 2 + 52;
+    const panelW = GAME_W / 2 - 68;
+    const panelH = 198;
+    const panelY = 344;
+    const panel = this.add.rectangle(cx + panelW / 2 - 4, panelY + panelH / 2, panelW, panelH, 0x0a0a1a, 0.82)
+      .setOrigin(0.5).setStrokeStyle(1.5, 0xffcc00, 0.7);
+    this.tweens.add({ targets: panel, strokeAlpha: 0.2, duration: 900, yoyo: true, repeat: -1 });
+
+    this.add.text(cx, panelY + 8, '必殺技 MOVE LIST', {
+      fontFamily: 'monospace', fontSize: '13px', color: '#ffcc00', fontStyle: 'bold',
     });
-    lines.forEach((l, i) => {
-      this.add.text(cx, 378 + i * 20, l, {
-        fontFamily: 'monospace', fontSize: '13px', color: '#e0e0e0',
-      });
+
+    const moves = [
+      ['移動', 'WASD / ARROWS  (double-tap → run)', '#9e9eb8'],
+      ['跳',   'W / ↑ / SPACE  (again mid-air = 2x)', '#9e9eb8'],
+      ['蹲',   'S / ↓  (dodges high attacks)', '#9e9eb8'],
+      ['拳',   'Z — chain: Z Z Z · Z→X launcher', '#ffe14d'],
+      ['腳',   'X — X→Z sweep · ↑+Z uppercut', '#ffe14d'],
+      ['龍拳', 'Z+X (1 SP) — dash punch knockdown', '#ff8a65'],
+      ['旋風腿','↓+Z+X (2 SP) — 360° AOE spin', '#ff8a65'],
+      ['氣功彈','F / hold Z+X 600ms (1 SP) — full screen', '#4dd9ff'],
+      ['擋',   'L / 🛡 hold — blocks all damage, 50% spd', '#4dd9ff'],
+    ];
+
+    moves.forEach(([zh, en, col], i) => {
+      this.add.text(cx, panelY + 28 + i * 19,
+        `${zh.padEnd(4)} ${en}`, {
+          fontFamily: 'monospace', fontSize: '12px', color: col,
+        });
     });
 
     this.add.text(GAME_W / 2, GAME_H - 18, '香港 · 2D 橫向格鬥 · Phaser 3', {

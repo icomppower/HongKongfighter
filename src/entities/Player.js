@@ -72,11 +72,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.keys = scene.input.keyboard.addKeys({
       up: K.UP, down: K.DOWN, left: K.LEFT, right: K.RIGHT,
       w: K.W, a: K.A, s: K.S, d: K.D,
-      z: K.Z, x: K.X, j: K.J, k: K.K, space: K.SPACE, f: K.F,
+      z: K.Z, x: K.X, j: K.J, k: K.K, space: K.SPACE, f: K.F, l: K.L,
     });
 
     this.kiBlastCooldownUntil = 0;
     this.zxBothHeldSince = 0;
+    this.blocking = false;
 
     // Press events are buffered rather than polled with JustDown: Phaser's
     // Key.onUp clears the pending justDown flag, so a tap whose keyup lands
@@ -152,6 +153,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   rightHeld() { return this.keys.right.isDown || this.keys.d.isDown || TouchState.right; }
   upHeld() { return this.keys.up.isDown || this.keys.w.isDown || TouchState.up; }
   downHeld() { return this.keys.down.isDown || this.keys.s.isDown || TouchState.down; }
+  blockHeld() { return this.keys.l.isDown || TouchState.block; }
 
   /* ---------------- main update ---------------- */
 
@@ -179,6 +181,22 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.consumeInput();
     this.groundCheck();
     this.pollTapRun(time);
+
+    // Block state — transitions in from any non-locked state when L is held on ground.
+    const canBlock = this.onGround
+      && !['hurt', 'fall', 'down', 'getup', 'grabbed'].includes(this.state);
+    if (this.blockHeld() && canBlock) {
+      if (!this.blocking) {
+        this.blocking = true;
+        this.setTint(0x4dd9ff);
+        if (this.state === 'attack') this.setState_('idle');
+        this.state = 'block';
+      }
+    } else if (this.blocking) {
+      this.blocking = false;
+      this.clearTint();
+      if (this.state === 'block') this.setState_('idle');
+    }
 
     switch (this.state) {
       case 'hurt':
@@ -209,6 +227,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       case 'attack':
         this.handleAttackInput(time);
         this.progressAttack(time, delta);
+        break;
+      case 'block':
+        this.handleBlockMovement();
         break;
       default:
         this.handleMovement(time);
@@ -338,6 +359,30 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   restoreBody() {
     this.body.setSize(22, 52);
     this.body.setOffset(13, 12);
+  }
+
+  handleBlockMovement() {
+    const dir = (this.rightHeld() ? 1 : 0) - (this.leftHeld() ? 1 : 0);
+    if (dir !== 0) {
+      this.facing = dir;
+      this.setFlipX(dir < 0);
+      this.setVelocityX(dir * WALK_SPEED * 0.5);
+      this.play('keung-walk', true);
+    } else {
+      this.setVelocityX(0);
+      this.play('keung-idle', true);
+    }
+  }
+
+  onBlock(fromX, time) {
+    const dir = this.x >= fromX ? 1 : -1;
+    this.setVelocityX(dir * 90);
+    this.invulnUntil = Math.max(this.invulnUntil, time + 180);
+    this.scene.popText(this.x, this.y - 90, '格!', '#4dd9ff', 22);
+    Sfx.play('block');
+    this.scene.cameras.main.shake(35, 0.0018);
+    this.setAlpha(0.25);
+    this.scene.time.delayedCall(75, () => { if (this.active) this.setAlpha(1); });
   }
 
   /* ---------------- attacks ---------------- */
@@ -550,6 +595,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   takeHit(mv, fromX, time) {
     if (this.isDead || time < this.invulnUntil) return false;
     if (['down', 'getup', 'grabbed'].includes(this.state)) return false;
+
+    if (this.blocking) {
+      this.onBlock(fromX, time);
+      return false;
+    }
 
     if (this.state === 'crouch' && mv.crouchDodgeable) {
       this.scene.popText(this.x, this.y - 100, 'DODGE!', '#9be8ff', 14);

@@ -9,6 +9,7 @@
 import { GAME_W, GAME_H } from '../constants.js';
 import { TouchState, TouchPresses } from './touch.js';
 import { Sfx } from '../systems/Sfx.js';
+import { isTouchDevice } from './touch.js';
 
 const PAD_CX = 110;
 const PAD_CY = GAME_H - 100;
@@ -34,6 +35,7 @@ export default class MobileControls {
       TouchPresses.z = true;
       TouchPresses.x = true;
     }, 30);
+    this.buildHoldButton(GAME_W - 152, GAME_H - 140, '擋', 0x4dd9ff);
 
     scene.input.on('pointerdown', this.onPadDown, this);
     scene.input.on('pointermove', this.onPadMove, this);
@@ -123,6 +125,29 @@ export default class MobileControls {
   }
 
   /* ---------------- action buttons ---------------- */
+
+  // Hold-type button: sets a TouchState flag while finger is down.
+  buildHoldButton(x, y, label, color, radius = 32) {
+    const zone = this.scene.add.circle(x, y, radius + 8, color, 0.18)
+      .setDepth(50).setStrokeStyle(2, color, 0.8)
+      .setInteractive({ useHandCursor: false });
+    this.scene.add.text(x, y, label, {
+      fontFamily: '"PingFang HK", "Hiragino Sans", sans-serif',
+      fontSize: `${radius * 0.8}px`, color: '#ffffff', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(51).setAlpha(0.85);
+
+    zone.on('pointerdown', () => {
+      Sfx.ensure();
+      zone.setFillStyle(color, 0.45);
+      TouchState.block = true;
+    });
+    const release = () => {
+      zone.setFillStyle(color, 0.18);
+      TouchState.block = false;
+    };
+    zone.on('pointerup', release);
+    zone.on('pointerout', release);
+  }
 
   buildButton(x, y, label, color, onPress, radius = 36) {
     const zone = this.scene.add.circle(x, y, radius + 8, color, 0.18)
