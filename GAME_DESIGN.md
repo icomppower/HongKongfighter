@@ -11,6 +11,7 @@
 - v1.0: single stage, basic controls, enemy spawns, combo system
 - v2.0: 4 HK stages, bosses, weapons, ink brush cutscenes, mobile controls
 - v2.1: mobile menu fix, HP refill items, boss defeat rewards
+- v2.2: menu controls display fix, ki blast range attack, mobile canvas size fix
 
 ## ARCHITECTURE
 src/
@@ -52,6 +53,8 @@ Mouse kick:       Right click
 Mouse special:    Left + Right click within 100ms
 Mouse facing:     Character always faces cursor
 Mobile:           D-pad bottom-left, action buttons bottom-right
+Ki Blast:         F key / Hold J+K 600ms then release
+Ki Blast cost:    1 SP bar, 500ms cooldown
 
 ## STAGES
 1  九龍城寨  Kowloon Walled City    dark/cramped      boss: 龍叔 Uncle Dragon      HP:60
@@ -90,6 +93,11 @@ Weapon rules:
 - 50% drop chance when player is hit
 - Stage spawn weights vary per stage
 
+## KI BLAST
+damage: 20 | speed: 400px/sec | range: full screen
+visual: cyan energy orb with glow trail
+cost: 1 SP bar per blast
+
 ## SCORING
 Enemy kill:       base points × combo multiplier (x1-x5)
 Wave clear:       1000 × stage number
@@ -124,8 +132,9 @@ Continues: 3 max, costs 1000 score each
 - 1s pause → boss fight begins
 
 ## RESPONSIVE / MOBILE
-Canvas scale: Phaser.Scale.FIT + CENTER_BOTH
-Base size: 680×340, min 320×160, max 1920×960
+Canvas: Phaser.Scale.FIT, 680×340 base
+Tested: iPhone SE, iPhone 14, iPad portrait/landscape
+Buttons: repositioned on resize event, never hardcoded
 CSS: html/body 100% height, overflow hidden, flex center
 Orientation: both supported, soft landscape hint in portrait
 Meta: viewport no-scale, apple-mobile-web-app-capable
