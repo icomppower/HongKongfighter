@@ -316,8 +316,9 @@ export const ENEMIES = {
 };
 
 export const ITEM_TYPES = {
-  bun: { texture: 'item_bun', label: '叉燒包 +20HP' },
+  bun: { texture: 'item_bun', label: '叉燒包 +25HP' },
   hongbao: { texture: 'item_hongbao', label: '利是 +500' },
   drink: { texture: 'item_drink', label: '維他奶 +1SP' },
   coin: { texture: 'item_coin', label: '+100' },
+  claypot: { texture: 'item_claypot', label: '煲仔飯 全回復!' },
 };

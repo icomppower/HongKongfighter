@@ -364,6 +364,33 @@ function generateItems(scene) {
   ctx.arc(7, 7, 4.4, 0, PI2);
   ctx.stroke();
   addTex(scene, 'item_coin', c);
+
+  // 煲仔飯 claypot rice
+  c = makeCanvas(24, 22);
+  ctx = c.getContext('2d');
+  // pot body
+  ctx.fillStyle = '#4e342e';
+  ctx.beginPath();
+  ctx.ellipse(12, 14, 9, 7, 0, 0, PI2);
+  ctx.fill();
+  // pot rim
+  ctx.fillStyle = '#795548';
+  ctx.fillRect(3, 8, 18, 4);
+  // lid
+  ctx.fillStyle = '#6d4c41';
+  ctx.beginPath();
+  ctx.ellipse(12, 8, 9, 3.5, 0, Math.PI, 0);
+  ctx.fill();
+  // steam
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(9, 5); ctx.bezierCurveTo(7, 2, 11, 1, 9, -1);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(15, 5); ctx.bezierCurveTo(13, 2, 17, 1, 15, -1);
+  ctx.stroke();
+  addTex(scene, 'item_claypot', c);
 }
 
 function generateParticles(scene) {

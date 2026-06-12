@@ -8,8 +8,9 @@
 - All sprites: procedurally generated via Canvas API (no external assets)
 
 ## CURRENT VERSION
-- v1: single stage, basic controls, enemy spawns, combo system
-- v2 (in progress): 4 stages, mobile controls, weapons, ink brush cutscenes
+- v1.0: single stage, basic controls, enemy spawns, combo system
+- v2.0: 4 HK stages, bosses, weapons, ink brush cutscenes, mobile controls
+- v2.1: mobile menu fix, HP refill items, boss defeat rewards
 
 ## ARCHITECTURE
 src/
@@ -97,10 +98,16 @@ Boss defeat:      2000 × stage number
 Red envelope item: +500
 Continues: 3 max, costs 1000 score each
 
-## ITEMS (random 30% drop on enemy death)
-叉燒包  roast pork bun   restore 20 HP
-利是    red envelope     +500 score
-維他奶  vitasoy          fill 1 SP bar
+## ITEMS (on enemy death)
+叉燒包  roast pork bun   +25 HP         25%
+利是    red envelope     +500 score     15%
+維他奶  vitasoy          +1 SP bar      10%
+煲仔飯  claypot rice     full HP restore 8% (rare)
+
+## BOSS DEFEAT REWARDS
+- Full HP restore on every boss kill  →  floating: 體力全回復!
+- +1 extra life (cap: 9)              →  floating: 獲得1條命!
+- Gold coin burst particle effect
 
 ## STAGE INTRO CUTSCENE
 - Black screen

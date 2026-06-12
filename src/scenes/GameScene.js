@@ -183,10 +183,13 @@ export default class GameScene extends Phaser.Scene {
       mult > 1 ? `+${points} (x${mult})` : `+${points}`, '#ffe14d', 15);
     this.spawnHitSpark(enemy.x, enemy.y - 50, true);
 
-    // 30% drop chance on regular kills.
-    if (!enemy.cfg.boss && Math.random() < 0.3) {
-      const type = Phaser.Utils.Array.GetRandom(['bun', 'hongbao', 'drink']);
-      this.spawnItem(enemy.x, enemy.y - 60, type);
+    // Independent drop chances per item type on regular kills.
+    if (!enemy.cfg.boss) {
+      const r = Math.random();
+      if (r < 0.08) this.spawnItem(enemy.x, enemy.y - 60, 'claypot');
+      else if (r < 0.18) this.spawnItem(enemy.x, enemy.y - 60, 'drink');
+      else if (r < 0.33) this.spawnItem(enemy.x, enemy.y - 60, 'hongbao');
+      else if (r < 0.58) this.spawnItem(enemy.x, enemy.y - 60, 'bun');
     }
 
     if (enemy.cfg.boss) {
@@ -196,6 +199,28 @@ export default class GameScene extends Phaser.Scene {
 
   onBossDefeated(boss) {
     this.popText(boss.x, boss.y - 130, 'K.O.!!', '#ff3d7f', 40);
+
+    // Full HP restore.
+    const hpGained = this.player.maxHp - this.player.hp;
+    if (hpGained > 0) {
+      this.player.heal(hpGained);
+      this.time.delayedCall(400, () => {
+        this.popText(boss.x, boss.y - 160, '體力全回復!', '#6dff6d', 18);
+      });
+    }
+
+    // +1 life (cap 9).
+    if (this.lives < 9) {
+      this.lives += 1;
+      this.game.events.emit('hud:lives', { lives: this.lives });
+      this.time.delayedCall(700, () => {
+        this.popText(boss.x, boss.y - 190, '獲得1條命!', '#ffd54f', 18);
+      });
+    }
+
+    // Gold coin burst.
+    this.orbEmitter.explode(28, boss.x, boss.y - 60);
+
     this.time.delayedCall(2200, () => this.completeZone());
   }
 
@@ -290,7 +315,7 @@ export default class GameScene extends Phaser.Scene {
     const def = ITEM_TYPES[item.itemType];
     switch (item.itemType) {
       case 'bun':
-        p.heal(20);
+        p.heal(25);
         break;
       case 'hongbao':
         this.addScore(500);
@@ -300,6 +325,9 @@ export default class GameScene extends Phaser.Scene {
         break;
       case 'coin':
         this.addScore(100);
+        break;
+      case 'claypot':
+        p.heal(p.maxHp - p.hp);
         break;
       default:
         break;
