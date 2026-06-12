@@ -12,7 +12,8 @@
 - v2.0: 4 HK stages, bosses, weapons, ink brush cutscenes, mobile controls
 - v2.1: mobile menu fix, HP refill items, boss defeat rewards
 - v2.2: menu controls display fix, ki blast range attack ✅, mobile canvas size fix
-- v2.3: block system ✅, menu move list ✅ (MIDI pending)
+- v2.3: block system ✅, menu move list ✅
+- v2.4: MIDI music ✅, M key mute toggle ✅, move audit ✅
 
 ## ARCHITECTURE
 src/
@@ -134,6 +135,13 @@ Continues: 3 max, costs 1000 score each
 - Boss name card slides from right
 - Red camera flash
 - 1s pause → boss fight begins
+
+## MUSIC 音樂
+Source: 願榮光歸香港 Glory to Hong Kong (programmatic, no external file)
+Engine: Tone.js PolySynth — triangle-wave oscillator, 72 BPM, Bb major, 32-beat loop
+Controls: M key — mute / unmute mid-game (popup: 🔇/🔊)
+Lifecycle: starts on first interaction in MenuScene (autoplay policy), loops through all zones, stops on game over
+Status: ✅ implemented v2.4
 
 ## BLOCK SYSTEM 擋
 input: Hold L key / 🛡 mobile button

@@ -15,6 +15,7 @@ import CombatSystem from '../systems/CombatSystem.js';
 import SpawnerSystem from '../systems/SpawnerSystem.js';
 import CameraSystem from '../systems/CameraSystem.js';
 import { Sfx } from '../systems/Sfx.js';
+import { midiPlayer } from '../systems/MidiPlayer.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -66,6 +67,12 @@ export default class GameScene extends Phaser.Scene {
       this.events.off('enemy:died', this.onEnemyDied, this);
       this.events.off('darkness:on', this.setDarkness, this);
       this.events.off('darkness:off', this.clearDarkness, this);
+    });
+
+    // M key — mute / unmute music.
+    this.input.keyboard.on('keydown-M', () => {
+      const muted = midiPlayer.toggle();
+      this.popText(this.player.x, this.player.y - 80, muted ? '🔇 音樂靜音' : '🔊 音樂開啟', '#ffe14d', 18);
     });
 
     // HUD scene runs in parallel.
@@ -422,6 +429,7 @@ export default class GameScene extends Phaser.Scene {
 
   gameOver(win) {
     this.ending = true;
+    midiPlayer.stop();
     this.scene.stop('HUD');
     this.scene.start('GameOver', {
       win,

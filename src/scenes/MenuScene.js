@@ -3,6 +3,7 @@
 
 import { GAME_W, GAME_H, GROUND_Y, STORAGE } from '../constants.js';
 import { Sfx } from '../systems/Sfx.js';
+import { midiPlayer } from '../systems/MidiPlayer.js';
 
 export default class MenuScene extends Phaser.Scene {
   constructor() {
@@ -100,7 +101,11 @@ export default class MenuScene extends Phaser.Scene {
       fontFamily: 'monospace', fontSize: '12px', color: '#7a7a8c',
     }).setOrigin(0.5);
 
-    this.input.keyboard.once('keydown', () => Sfx.ensure());
+    // Start music on first interaction (browser autoplay policy requires user gesture).
+    const startMusic = () => { Sfx.ensure(); midiPlayer.play(); };
+    this.input.keyboard.once('keydown', startMusic);
+    this.input.once('pointerdown', startMusic);
+
     this.input.keyboard.on('keydown-Z', () => this.startGame());
     this.input.keyboard.on('keydown-ENTER', () => this.startGame());
     this.input.on('pointerdown', () => this.startGame()); // tap to start (mobile)
