@@ -96,6 +96,11 @@ class SfxEngine {
         this.tone({ f0: 70, f1: 50, dur: 0.7, type: 'sawtooth', vol: 0.22 });
         this.tone({ f0: 105, f1: 75, dur: 0.7, type: 'sawtooth', vol: 0.16, delay: 0.05 });
         break;
+      case 'kiblast':
+        this.tone({ f0: 880, f1: 1760, dur: 0.08, type: 'sine', vol: 0.12 });
+        this.tone({ f0: 440, f1: 220, dur: 0.3, type: 'sawtooth', vol: 0.1, delay: 0.05 });
+        this.noise({ dur: 0.15, vol: 0.12, freq: 2200, delay: 0.02 });
+        break;
       case 'select':
         this.tone({ f0: 520, f1: 780, dur: 0.08, type: 'square', vol: 0.1 });
         break;

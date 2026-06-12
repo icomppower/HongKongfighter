@@ -43,6 +43,7 @@ export default class GameScene extends Phaser.Scene {
     this.items = this.add.group();
     this.weapons = this.add.group();
     this.projectiles = this.add.group();
+    this.playerProjectiles = this.add.group();
 
     this.combat = new CombatSystem(this);
     this.spawner = new SpawnerSystem(this, zone);
@@ -260,6 +261,50 @@ export default class GameScene extends Phaser.Scene {
 
   /* ---------------- boss projectiles ---------------- */
 
+  spawnKiBlast(x, y, facing) {
+    const vx = facing * 400;
+    const proj = this.physics.add.sprite(x, y, 'proj_kiblast')
+      .setDepth(DEPTH.FX).setScale(1.9);
+    proj.setFlipX(vx < 0);
+    proj.body.setAllowGravity(false);
+    proj.setVelocity(vx, 0);
+    this.playerProjectiles.add(proj);
+
+    // Pulsing glow trail via tween on alpha.
+    this.tweens.add({ targets: proj, alpha: 0.65, duration: 140, yoyo: true, repeat: -1 });
+    return proj;
+  }
+
+  updatePlayerProjectiles(time) {
+    for (const proj of this.playerProjectiles.getChildren()) {
+      if (!proj.active) continue;
+      if (proj.x < -80 || proj.x > this.zone.width + 80) {
+        proj.destroy();
+        continue;
+      }
+      const s = 1.9;
+      const w = 26 * s;
+      const h = 26 * s;
+      const rect = new Phaser.Geom.Rectangle(proj.x - w / 2, proj.y - h / 2, w, h);
+      for (const enemy of this.enemies.getChildren()) {
+        if (!enemy.active || enemy.isDead) continue;
+        if (Phaser.Geom.Rectangle.Overlaps(rect, enemy.getHurtbox())) {
+          const landed = enemy.takeHit({
+            damage: 20, freeze: 10,
+            knockback: { x: 300, y: -240 }, knockdown: true,
+          }, proj.x - (proj.body.velocity.x > 0 ? 10 : -10), time);
+          if (landed) {
+            this.spawnHitSpark(proj.x, proj.y, true);
+            Sfx.play('special');
+            this.cameras.main.shake(80, 0.003);
+            proj.destroy();
+            break;
+          }
+        }
+      }
+    }
+  }
+
   spawnProjectile(x, y, vx, vy, spec, owner) {
     const proj = this.physics.add.sprite(x, y, spec.tex)
       .setDepth(DEPTH.FX).setScale(1.6);
@@ -423,6 +468,7 @@ export default class GameScene extends Phaser.Scene {
     this.updateItems();
     this.updateWeaponPickups();
     this.updateProjectiles(time);
+    this.updatePlayerProjectiles(time);
     this.drawShadows();
     this.drawBarriers(time);
     this.checkZoneExit();

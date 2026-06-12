@@ -72,14 +72,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.keys = scene.input.keyboard.addKeys({
       up: K.UP, down: K.DOWN, left: K.LEFT, right: K.RIGHT,
       w: K.W, a: K.A, s: K.S, d: K.D,
-      z: K.Z, x: K.X, j: K.J, k: K.K, space: K.SPACE,
+      z: K.Z, x: K.X, j: K.J, k: K.K, space: K.SPACE, f: K.F,
     });
+
+    this.kiBlastCooldownUntil = 0;
+    this.zxBothHeldSince = 0;
 
     // Press events are buffered rather than polled with JustDown: Phaser's
     // Key.onUp clears the pending justDown flag, so a tap whose keyup lands
     // in the same frame as the keydown would be eaten entirely.
-    this.pressed = { z: false, x: false, jump: false, leftTap: false, rightTap: false };
-    this.frameInput = { z: false, x: false, jump: false, leftTap: false, rightTap: false };
+    this.pressed = { z: false, x: false, jump: false, leftTap: false, rightTap: false, f: false };
+    this.frameInput = { z: false, x: false, jump: false, leftTap: false, rightTap: false, f: false };
     const press = (flag) => (event) => {
       if (!event.repeat) this.pressed[flag] = true;
     };
@@ -95,6 +98,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       'keydown-A': press('leftTap'),
       'keydown-RIGHT': press('rightTap'),
       'keydown-D': press('rightTap'),
+      'keydown-F': press('f'),
     };
     for (const [ev, fn] of Object.entries(this.keyHandlers)) {
       scene.input.keyboard.on(ev, fn);
@@ -129,12 +133,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       jump: this.pressed.jump || TouchPresses.jump,
       leftTap: this.pressed.leftTap,
       rightTap: this.pressed.rightTap,
+      f: this.pressed.f,
     };
     this.pressed.z = false;
     this.pressed.x = false;
     this.pressed.jump = false;
     this.pressed.leftTap = false;
     this.pressed.rightTap = false;
+    this.pressed.f = false;
     TouchPresses.z = false;
     TouchPresses.x = false;
     TouchPresses.jump = false;
@@ -342,6 +348,21 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (zNow) this.lastZ = time;
     if (xNow) this.lastX = time;
 
+    // --- ki blast: F key (instant) or hold Z+X 600ms then release ---
+    if (this.frameInput.f) {
+      this.fireKiBlast(time);
+    }
+    const zxHeld = (this.keys.z.isDown || this.keys.j.isDown)
+      && (this.keys.x.isDown || this.keys.k.isDown);
+    if (zxHeld) {
+      if (!this.zxBothHeldSince) this.zxBothHeldSince = time;
+    } else {
+      if (this.zxBothHeldSince && time - this.zxBothHeldSince >= 600) {
+        this.fireKiBlast(time);
+      }
+      this.zxBothHeldSince = 0;
+    }
+
     // --- specials: Z+X (Dragon Fist) / Down+Z+X (Hurricane) ---
     const both = (zNow && time - this.lastX <= SIMUL_WINDOW)
       || (xNow && time - this.lastZ <= SIMUL_WINDOW);
@@ -375,6 +396,21 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (zNow && this.heldWeapon) return this.startMove('weaponSwing', time);
     // --- grounded normals ---
     return this.startMove(zNow ? 'punch1' : 'kick', time);
+  }
+
+  fireKiBlast(time) {
+    if (this.isDead) return;
+    if (time < this.kiBlastCooldownUntil) return;
+    if (this.sp < 1) {
+      this.scene.popText(this.x, this.y - 100, 'SP不足!', '#ff6b6b', 13);
+      return;
+    }
+    this.sp -= 1;
+    this.scene.game.events.emit('hud:sp', { sp: this.sp });
+    this.kiBlastCooldownUntil = time + 500;
+    this.scene.spawnKiBlast(this.x + this.facing * 32, this.y - 52, this.facing);
+    this.scene.popText(this.x, this.y - 110, '氣功彈!', '#7df0ff', 15);
+    Sfx.play('kiblast');
   }
 
   startMove(key, time) {

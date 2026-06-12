@@ -11,7 +11,7 @@
 - v1.0: single stage, basic controls, enemy spawns, combo system
 - v2.0: 4 HK stages, bosses, weapons, ink brush cutscenes, mobile controls
 - v2.1: mobile menu fix, HP refill items, boss defeat rewards
-- v2.2: menu controls display fix, ki blast range attack, mobile canvas size fix
+- v2.2: menu controls display fix, ki blast range attack ✅, mobile canvas size fix
 
 ## ARCHITECTURE
 src/
@@ -93,10 +93,13 @@ Weapon rules:
 - 50% drop chance when player is hit
 - Stage spawn weights vary per stage
 
-## KI BLAST
+## KI BLAST 氣功彈
 damage: 20 | speed: 400px/sec | range: full screen
-visual: cyan energy orb with glow trail
-cost: 1 SP bar per blast
+visual: cyan energy orb with pulsing glow trail (proj_kiblast)
+cost: 1 SP bar per blast | cooldown: 500ms
+input: F key (instant) or hold Z+X 600ms then release
+spawn: player x±32, y-52 (outstretched hand height)
+status: ✅ implemented v2.2
 
 ## SCORING
 Enemy kill:       base points × combo multiplier (x1-x5)

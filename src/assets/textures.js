@@ -426,6 +426,18 @@ function generateParticles(scene) {
   ctx.fillRect(0, 0, 16, 16);
   addTex(scene, 'fx_orb', c);
 
+  // ki blast projectile — larger bright cyan orb with hard white core
+  c = makeCanvas(26, 26);
+  ctx = c.getContext('2d');
+  g = ctx.createRadialGradient(13, 13, 1, 13, 13, 13);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.25, 'rgba(160,245,255,1)');
+  g.addColorStop(0.6, 'rgba(50,180,255,0.85)');
+  g.addColorStop(1, 'rgba(30,100,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 26, 26);
+  addTex(scene, 'proj_kiblast', c);
+
   // rain streak
   c = makeCanvas(3, 16);
   ctx = c.getContext('2d');
